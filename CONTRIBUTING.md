@@ -9,7 +9,7 @@ Cảm ơn bạn đã quan tâm và muốn đóng góp cho dự án mã nguồn m
 1. **Fork** repository này về tài khoản GitHub của bạn.
 2. **Clone** bản fork về máy cá nhân:
    ```bash
-   git clone https://github.com/<your-username>/OpenRPGLoader.git
+   git clone https://github.com/maplemagilabsvn/OpenRPGLoader
    ```
 3. Tạo một nhánh mới (Branch) mang tính mô tả cao:
    ```bash
