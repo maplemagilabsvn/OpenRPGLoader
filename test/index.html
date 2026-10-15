@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>OpenRPGLoader Test Runner</title>
+</head>
+<body>
+    <h1>Running tests...</h1>
+    <script>
+        const fs = require('fs');
+        const path = require('path');
+        try {
+            require('./test_runner.js');
+        } catch (err) {
+            fs.writeFileSync(path.join(__dirname, 'test_error.log'), String(err && err.stack ? err.stack : err), 'utf8');
+        }
+        setTimeout(() => {
+            if (typeof nw !== 'undefined' && nw.App) {
+                nw.App.quit();
+            } else {
+                window.close();
+            }
+        }, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+[OpenRPG][2:53:51 AM] Khởi tạo OpenRPGEngine Core cho [rpg_maker_mz] v1.0.0
+==================================================================
+🚀 BẮT ĐẦU CHẠY BỘ KIỂM THỬ TỰ ĐỘNG CHO OPENRPGLOADER CORE
+==================================================================
+
+📋 [TEST SUITE 1] RFC 6902 JSON-Patch Operations
+  ✔ [PASS] Op 'add': Thêm thuộc tính mới vào object
+  ✔ [PASS] Op 'add': Chèn phần tử vào mảng theo index
+  ✔ [PASS] Op 'add': Thêm phần tử vào cuối mảng với path '/-'
+  ✔ [PASS] Op 'add': Từ chối chèn mảng với index không phải số
+  ✔ [PASS] Op 'remove': Xóa thuộc tính khỏi object
+  ✔ [PASS] Op 'remove': Xóa phần tử khỏi mảng theo index
+  ✔ [PASS] Op 'replace': Thay thế giá trị lồng nhau
+  ✔ [PASS] Op 'replace': Thay thế phần tử trong mảng
+  ✔ [PASS] Op 'move': Di chuyển thuộc tính hợp lệ
+  ✔ [PASS] Op 'move': Báo lỗi khi 'from' path không tồn tại
+  ✔ [PASS] Op 'move': Báo lỗi khi di chuyển vào child path của chính nó
+  ✔ [PASS] Op 'copy': Sao chép dữ liệu chính xác
+  ✔ [PASS] Op 'copy': Sao chép tạo ra bản sao độc lập (Deep Clone)
+  ✔ [PASS] Op 'test': Khớp giá trị chính xác thành công
+  ✔ [PASS] Op 'test': Ném ngoại lệ khi giá trị không khớp
+
+📋 [TEST SUITE 2] Topo Sort & Cycle Detection (DFS)
+[OpenRPG][2:53:51 AM] Khởi tạo OpenRPGEngine Core cho [generic_rpg] v1.0.0
+  ✔ [PASS] Topo Sort sắp xếp đúng thứ tự phụ thuộc: BaseMod -> CoreUI -> ShieldExpansion
+[OpenRPG][2:53:51 AM][WARN] [DependencySort] Phát hiện chu trình lặp phụ thuộc liên quan tới mod [CycleA]!
+[OpenRPG][2:53:51 AM][WARN] [DependencySort] Phát hiện chu trình lặp phụ thuộc liên quan tới mod [CycleB]!
+  ✔ [PASS] Cycle Detection phát hiện và đánh dấu status 'error' cho chu trình lặp
+  ✔ [PASS] Cycle Detection ghi nhận thông báo lỗi chi tiết không gây treo chương trình
+
+📋 [TEST SUITE 3] Feature Toggles & Pluggable Policy APIs
+[OpenRPG][2:53:51 AM] Khởi tạo OpenRPGEngine Core cho [generic_rpg] v1.0.0
+  ✔ [PASS] Feature Toggle mặc định: safeFs = true
+  ✔ [PASS] Feature Toggle mặc định mềm dẻo: strictQuarantine = false
+[OpenRPG][2:53:51 AM] ⚙ [FeatureToggle] Chốt chặn [safeFs] = false
+  ✔ [PASS] toggleFeature có thể bật/tắt động tại runtime
+[OpenRPG][2:53:51 AM] ⚙ [FeatureToggle] Chốt chặn [safeFs] = true
+  ✔ [PASS] hasPermission nhận diện quyền chuẩn network:outbound
+  ✔ [PASS] hasPermission từ chối quyền chưa khai báo
+[OpenRPG][2:53:51 AM] ✔ [Policy] Đã đăng ký chính sách tùy biến cho chốt chặn: [permission]
+  ✔ [PASS] Pluggable Policy tùy biến can thiệp cấp quyền thành công
+  ✔ [PASS] Audit phát hiện cú pháp nhạy cảm (Điểm: 86)
+  ✔ [PASS] Chế độ kiểm duyệt mặc định là cảnh báo mềm (strictQuarantine: false)
+
+📋 [TEST SUITE 4] Safe-FS Path Traversal Prevention
+[OpenRPG][2:53:51 AM] Khởi tạo OpenRPGEngine Core cho [generic_rpg] v1.0.0
+  ✔ [PASS] Khởi tạo thành công Safe-FS wrapper
+  ✔ [PASS] Safe-FS chặn đứng đường dẫn tấn công Directory Traversal (../../../)
+  ✔ [PASS] Safe-FS chặn đứng hành vi xóa file tuyệt đối bên ngoài thư mục mod
+[OpenRPG][2:53:51 AM] ✔ [Policy] Đã đăng ký chính sách tùy biến cho chốt chặn: [fs]
+  ✔ [PASS] Pluggable Policy 'fs' chặn thành công tệp bị cấm
+
+📋 [TEST SUITE 5] Circuit Breaker Tripping & Error Counts
+[OpenRPG][2:53:51 AM] Khởi tạo OpenRPGEngine Core cho [generic_rpg] v1.0.0
+[OpenRPG][2:53:51 AM][ERROR] [SafeHook] Mod [BuggyMod] ném lỗi tại [MockBattle.calcDamage]: Error: Mod crash inside battle calculation loop!
+    at MockBattle.<anonymous> (D:\A Shield Journey\OpenRPGLoader\test\test_runner.js:322:19)
+    at next (D:\A Shield Journey\OpenRPGLoader\src\OpenRPGEngine.js:660:51)
+    at targetClass.<computed> (D:\A Shield Journey\OpenRPGLoader\src\OpenRPGEngine.js:684:28)
+    at D:\A Shield Journey\OpenRPGLoader\test\test_runner.js:326:31
+    at Object.<anonymous> (D:\A Shield Journey\OpenRPGLoader\test\test_runner.js:411:3)
+    at Module._compile (node:internal/modules/cjs/loader:1937:14)
+    at Object..js (node:internal/modules/cjs/loader:2070:10)
+    at Module.load (node:internal/modules/cjs/loader:1658:32)
+    at node:internal/modules/cjs/loader:1450:12
+    at Module._load (node:electron/js2c/node_init:2:18263)
+  ✔ [PASS] Lần gọi 1: Khi hook ném lỗi, game vẫn tiếp tục chạy và trả về kết quả chuẩn
+  ✔ [PASS] Lần gọi 1: Hook đã được kích hoạt
+[OpenRPG][2:53:51 AM][ERROR] [SafeHook] Mod [BuggyMod] ném lỗi tại [MockBattle.calcDamage]: Error: Mod crash inside battle calculation loop!
+    at MockBattle.<anonymous> (D:\A Shield Journey\OpenRPGLoader\test\test_runner.js:322:19)
+    at next (D:\A Shield Journey\OpenRPGLoader\src\OpenRPGEngine.js:660:51)
+    at targetClass.<computed> (D:\A Shield Journey\OpenRPGLoader\src\OpenRPGEngine.js:684:28)
+    at D:\A Shield Journey\OpenRPGLoader\test\test_runner.js:331:31
+    at Object.<anonymous> (D:\A Shield Journey\OpenRPGLoader\test\test_runner.js:411:3)
+    at Module._compile (node:internal/modules/cjs/loader:1937:14)
+    at Object..js (node:internal/modules/cjs/loader:2070:10)
+    at Module.load (node:internal/modules/cjs/loader:1658:32)
+    at node:internal/modules/cjs/loader:1450:12
+    at Module._load (node:electron/js2c/node_init:2:18263)
+[OpenRPG][2:53:51 AM][WARN] [Circuit Breaker] Tự ngắt hook [MockBattle.calcDamage] của mod [BuggyMod].
+  ✔ [PASS] Lần gọi 2: Kết quả vẫn an toàn
+  ✔ [PASS] Lần gọi 2: Hook chạm ngưỡng lỗi
+  ✔ [PASS] Lần gọi 3: Circuit Breaker bảo vệ thành công, hàm chạy mượt
+  ✔ [PASS] Lần gọi 3: Hook lỗi đã bị ngắt triệt để, không bị gọi thêm lần nào nữa
+
+📋 [TEST SUITE 6] Save Shield Orphan Entity Cleansing
+[OpenRPG][2:53:51 AM] Khởi tạo OpenRPGEngine Core cho [generic_rpg] v1.0.0
+[OpenRPG][2:53:51 AM] 🛡️ [SaveShield] Đã cách ly dữ liệu mồ côi: {"items":1,"weapons":1,"armors":1,"actors":1}
+  ✔ [PASS] Save Shield giữ nguyên vật phẩm hợp lệ trong save
+  ✔ [PASS] Save Shield thanh lọc thành công Item mồ côi (ID: 99)
+  ✔ [PASS] Save Shield thanh lọc thành công Weapon mồ côi (ID: 50)
+  ✔ [PASS] Save Shield thanh lọc thành công Armor mồ côi (ID: 70)
+  ✔ [PASS] Save Shield thanh lọc thành công Actor mồ côi (ID: 88)
+[OpenRPG][2:53:51 AM] 🛡️ [SaveShield] Đã cách ly dữ liệu mồ côi: {"items":0,"weapons":0,"armors":0,"actors":1}
+  ✔ [PASS] Save Shield cứu nguy: Tự động khôi phục Actor mặc định khi đội hình bị rỗng
+
+==================================================================
+📊 KẾT QUẢ KIỂM THỬ: 42/42 TESTS ĐẠT (0 THẤT BẠI)
+==================================================================
+🎉 TẤT CẢ CÁC BÀI KIỂM THỬ ĐÃ VƯỢT QUA 100%!

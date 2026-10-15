@@ -1,0 +1,30 @@
+{
+  "name": "openrpgloader",
+  "version": "1.0.0",
+  "description": "General-purpose, Forge-style ModLoader and Management Engine for RPG Maker MZ games running on NW.js",
+  "main": "src/OpenRPGEngine.js",
+  "scripts": {
+    "test": "node test/test_runner.js",
+    "check-syntax": "node -c src/OpenRPGEngine.js && node -c src/OpenRPGLoader.js && node -c examples/adapters/VanillaMZ_UIAdapter.js && node -c examples/extensions/SampleCyberpunk_Extension.js && node -c sample_mod/index.js"
+  },
+  "keywords": [
+    "rpg-maker-mz",
+    "mod-loader",
+    "modding",
+    "nwjs",
+    "json-patch",
+    "rfc6902",
+    "forge-style",
+    "game-engine"
+  ],
+  "author": "OpenRPGLoader Project Contributors & M.A.P.L.E MAGI Labs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/OpenRPGLoader.git"
+  },
+  "bugs": {
+    "url": "https://github.com/username/OpenRPGLoader/issues"
+  },
+  "homepage": "https://github.com/username/OpenRPGLoader#readme"
+}

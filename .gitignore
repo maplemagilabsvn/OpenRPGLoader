@@ -1,0 +1,44 @@
+# Operating System Files
+Thumbs.db
+desktop.ini
+.DS_Store
+*.tmp
+*.temp
+
+# Node & Package Managers
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Crash Reports & Dynamic Cache
+mods/_crash_reports/
+mods/_audit_cache.json
+mods/mods_config.json
+mods/**/config.json
+test/test_results.log
+*.log
+
+# Backup & Savegame Files
+*.openrpg_bak
+*.bak
+*.rmmzsave
+save/
+
+# Archives & Installers
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.iss.bak
+Output/
+
+# IDE & Editor Directories
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~

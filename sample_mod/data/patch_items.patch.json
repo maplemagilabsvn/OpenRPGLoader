@@ -1,0 +1,22 @@
+[
+  {
+    "op": "replace",
+    "path": "/1/price",
+    "value": 45
+  },
+  {
+    "op": "replace",
+    "path": "/1/name",
+    "value": "Bình Máu Chuẩn RFC 6902"
+  },
+  {
+    "op": "add",
+    "path": "/1/effects/-",
+    "value": {
+      "code": 13,
+      "dataId": 0,
+      "value1": 10,
+      "value2": 0
+    }
+  }
+]

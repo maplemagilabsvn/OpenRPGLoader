@@ -1,0 +1,15 @@
+{
+  "id": "sample_generic_mod",
+  "name": "Bản Mod Mẫu OpenRPGLoader (Sample Mod)",
+  "version": "1.0.0",
+  "author": "M.A.P.L.E MAGI Labs",
+  "description": "Bản mod mẫu minh họa tính năng RFC 6902 JSON-Patch và cơ chế cấp quyền Permission System của OpenRPGLoader.",
+  "main": "index.js",
+  "dependencies": [],
+  "conflicts": [],
+  "permissions": [
+    "network:outbound"
+  ],
+  "bypassAudit": false,
+  "strictCircuitBreaker": false
+}

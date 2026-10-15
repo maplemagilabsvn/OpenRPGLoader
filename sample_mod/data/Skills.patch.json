@@ -1,0 +1,22 @@
+[
+  {
+    "op": "test",
+    "path": "/1/id",
+    "value": 1
+  },
+  {
+    "op": "replace",
+    "path": "/1/name",
+    "value": "Tấn Công Cường Hóa (Enhanced Attack)"
+  },
+  {
+    "op": "replace",
+    "path": "/1/mpCost",
+    "value": 0
+  },
+  {
+    "op": "add",
+    "path": "/1/damage/formula",
+    "value": "a.atk * 4.5 - b.def * 2"
+  }
+]
