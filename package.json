@@ -1,6 +1,6 @@
 {
   "name": "openrpgloader",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "General-purpose, Forge-style ModLoader and Management Engine for RPG Maker MZ games running on NW.js",
   "main": "src/OpenRPGEngine.js",
   "scripts": {
