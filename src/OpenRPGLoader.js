@@ -270,6 +270,9 @@
             let current = doc;
             for (let i = 0; i < tokens.length - 1; i++) {
                 const token = tokens[i];
+                if (token === "__proto__" || token === "constructor" || token === "prototype") {
+                    throw new Error(`[JSON-Patch] Lỗ hổng Prototype Pollution bị chặn: không cho phép can thiệp vào '${token}'!`);
+                }
                 if (current === null || typeof current !== "object") throw new Error(`Path lỗi tại: ${token}`);
                 if (!(token in current)) {
                     if (createMissing) current[token] = {};
@@ -277,12 +280,19 @@
                 }
                 current = current[token];
             }
-            return { parent: current, key: tokens[tokens.length - 1] };
+            const key = tokens[tokens.length - 1];
+            if (key === "__proto__" || key === "constructor" || key === "prototype") {
+                throw new Error(`[JSON-Patch] Lỗ hổng Prototype Pollution bị chặn: không cho phép can thiệp vào '${key}'!`);
+            }
+            return { parent: current, key };
         },
 
         resolveValue(doc, tokens) {
             let current = doc;
             for (const token of tokens) {
+                if (token === "__proto__" || token === "constructor" || token === "prototype") {
+                    throw new Error(`[JSON-Patch] Lỗ hổng Prototype Pollution bị chặn: không cho phép truy cập '${token}'!`);
+                }
                 if (current === null || typeof current !== "object" || !(token in current)) {
                     throw new Error(`Không tìm thấy giá trị tại: ${token}`);
                 }
@@ -309,6 +319,7 @@
                 auditCacheFileName: ".audit_cache.json",
                 circuitBreakerLimit: 2,
                 features: {},
+                priorities: {},
                 security: {
                     strictSandbox: true,
                     allowChildProcess: false,
@@ -317,7 +328,13 @@
                         "filesystem:unrestricted",
                         "child_process:exec",
                         "system:control"
-                    ]
+                    ],
+                    dangerousPermissions: [
+                        "child_process:exec",
+                        "filesystem:unrestricted",
+                        "system:control"
+                    ],
+                    defaultPromptResponse: null
                 }
             }, options);
 
@@ -333,11 +350,26 @@
                 auditCache: true
             }, this.options.features);
 
+            this.priorities = Object.assign({
+                CRITICAL: 10000,
+                HIGHEST: 1000,
+                HIGH: 500,
+                NORMAL: 0,
+                LOW: -500,
+                LOWEST: -1000,
+                MINIMAL: -10000
+            }, this.options.priorities);
+
+            this._grantedPermissions = new Map();
+
             this.policies = {
                 fs: null,
                 audit: null,
                 permission: null,
-                circuitBreaker: null
+                permissionPrompt: null,
+                circuitBreaker: null,
+                priority: null,
+                security: null
             };
 
             const root = this.options.gameRoot;
@@ -399,6 +431,56 @@
             return this.policies[type] || null;
         }
 
+        setSecurityPolicy(fn) {
+            if (fn === null || fn === undefined) {
+                this.policies.security = null;
+                return;
+            }
+            if (typeof fn !== "function") return;
+            this.policies.security = fn;
+            this.log("✔ [SecurityPolicy] Đã đăng ký Master Security Policy để kiểm soát toàn bộ cơ chế bảo mật.");
+        }
+
+        setPriorityFlags(flags) {
+            if (flags && typeof flags === "object") {
+                Object.assign(this.priorities, flags);
+                this.log(`✔ [Priority] Đã cập nhật cờ hiệu ưu tiên: ${Object.keys(flags).join(", ")}`);
+            }
+        }
+
+        resolvePriority(val) {
+            if (typeof val === "number") return val;
+            if (typeof val === "string" && val in this.priorities) return this.priorities[val];
+            if (typeof val === "string") {
+                const parsed = parseInt(val, 10);
+                if (!isNaN(parsed)) return parsed;
+            }
+            if (val && typeof val === "object" && val.priority !== undefined) {
+                return this.resolvePriority(val.priority);
+            }
+            return this.priorities.NORMAL !== undefined ? this.priorities.NORMAL : 0;
+        }
+
+        setPriorityComparator(fn) {
+            if (fn === null || fn === undefined) {
+                this.policies.priority = null;
+                return;
+            }
+            if (typeof fn !== "function") return;
+            this.policies.priority = fn;
+            this.log("✔ [Priority] Đã đăng ký hàm so sánh ưu tiên tùy biến (Priority Comparator).");
+        }
+
+        comparePriorities(a, b, context = "generic") {
+            if (typeof this.policies.priority === "function") {
+                const custom = this.policies.priority(a, b, context);
+                if (typeof custom === "number") return custom;
+            }
+            const pA = this.resolvePriority(a);
+            const pB = this.resolvePriority(b);
+            return pB - pA;
+        }
+
         toggleFeature(featureName, enabled) {
             this.features[featureName] = Boolean(enabled);
             this.log(`⚙ [FeatureToggle] Chốt chặn [${featureName}] = ${this.features[featureName]}`);
@@ -427,8 +509,27 @@
         on(event, callback, priority = 0) {
             if (typeof callback !== "function") return;
             if (!this._eventListeners[event]) this._eventListeners[event] = [];
-            this._eventListeners[event].push({ callback, priority });
-            this._eventListeners[event].sort((a, b) => b.priority - a.priority);
+            const resolvedPriority = this.resolvePriority(priority);
+            this._eventListeners[event].push({ callback, priority: resolvedPriority });
+            this._eventListeners[event].sort((a, b) => this.comparePriorities(a, b, "event"));
+        }
+
+        off(event, callback) {
+            if (!this._eventListeners[event]) return;
+            if (!callback) {
+                delete this._eventListeners[event];
+                return;
+            }
+            this._eventListeners[event] = this._eventListeners[event].filter(item => item.callback !== callback);
+        }
+
+        once(event, callback, priority = 0) {
+            if (typeof callback !== "function") return;
+            const onceWrapper = (...args) => {
+                this.off(event, onceWrapper);
+                return callback(...args);
+            };
+            this.on(event, onceWrapper, priority);
         }
 
         emit(event, ...args) {
@@ -699,7 +800,10 @@
 
                             if (engineRef.isFeatureEnabled("circuitBreaker")) {
                                 let shouldTrip = false;
-                                if (engineRef.policies.circuitBreaker) {
+                                if (typeof engineRef.policies.security === "function") {
+                                    const secTrip = engineRef.policies.security("circuitBreaker", culprit, pipelineKey, { hook: currentHook, error: err, errorCount: currentHook.errorCount });
+                                    if (typeof secTrip === "boolean") shouldTrip = secTrip;
+                                } else if (engineRef.policies.circuitBreaker) {
                                     shouldTrip = Boolean(engineRef.policies.circuitBreaker(currentHook, err, currentHook.errorCount, pipelineKey));
                                 } else {
                                     const culprit = engineRef.getMod(currentHook.modId);
@@ -721,8 +825,9 @@
             }
 
             const pipeline = this._hookPipelines.get(pipelineKey);
-            pipeline.hooks.push({ modId: effId, fn: hookFunction, priority, active: true, errorCount: 0 });
-            pipeline.hooks.sort((a, b) => b.priority - a.priority);
+            const resolvedPriority = this.resolvePriority(priority);
+            pipeline.hooks.push({ modId: effId, fn: hookFunction, priority: resolvedPriority, active: true, errorCount: 0 });
+            pipeline.hooks.sort((a, b) => this.comparePriorities(a, b, "hook"));
         }
 
         onDatabaseLoaded(callback) {
@@ -1034,15 +1139,94 @@
             }
         }
 
-        // --- PERMISSION SYSTEM NORMALIZATION & POLICY ---
+        // --- PERMISSION SYSTEM & DANGEROUS PERMISSION PROMPTING ---
+        isDangerousPermission(perm) {
+            const dangerous = (this.options.security && this.options.security.dangerousPermissions) || [
+                "child_process:exec",
+                "filesystem:unrestricted",
+                "system:control",
+                "network:outbound"
+            ];
+            if (!perm) return false;
+            if (perm === "*") return true;
+            const base = perm.split(":")[0];
+            return dangerous.some(d => d === perm || d === base || d === "*");
+        }
+
+        grantPermission(modId, perm) {
+            this._grantedPermissions.set(`${modId}:${perm}`, true);
+            this.log(`✔ [Permission] Đã cấp quyền [${perm}] cho mod [${modId}].`);
+        }
+
+        revokePermission(modId, perm) {
+            this._grantedPermissions.set(`${modId}:${perm}`, false);
+            this.log(`✔ [Permission] Đã thu hồi quyền [${perm}] từ mod [${modId}].`);
+        }
+
+        checkOrPromptPermission(modObj, perm) {
+            const key = `${modObj.id}:${perm}`;
+            if (this._grantedPermissions.has(key)) {
+                return this._grantedPermissions.get(key);
+            }
+
+            let granted = false;
+            // 1. Kiểm tra Master Security Policy
+            if (typeof this.policies.security === "function") {
+                const secRes = this.policies.security("prompt", modObj, perm, {});
+                if (typeof secRes === "boolean") {
+                    this._grantedPermissions.set(key, secRes);
+                    return secRes;
+                }
+            }
+
+            // 2. Kiểm tra Custom Permission Prompt Policy từ Developer
+            if (typeof this.policies.permissionPrompt === "function") {
+                granted = Boolean(this.policies.permissionPrompt(modObj, perm));
+            } else {
+                // 3. Mặc định: Hiện hộp thoại hỏi người dùng qua window.confirm (khi có giao diện UI/DOM)
+                const globalObj = this.getGlobalScope();
+                if (typeof globalObj.confirm === "function") {
+                    const modTitle = modObj.name || modObj.id;
+                    const message = `[CẢNH BÁO BẢO MẬT - OPENRPG]\n\nBản mod "${modTitle}" (v${modObj.version || "1.0.0"}) đang yêu cầu quyền truy cập hệ thống nguy hiểm:\n👉 "${perm}"\n\nQuyền này cho phép mod can thiệp sâu vào tệp tin hoặc tiến trình máy tính.\nBạn có đồng ý cấp quyền này không?`;
+                    granted = Boolean(globalObj.confirm(message));
+                } else if (this.options.security && typeof this.options.security.defaultPromptResponse === "boolean") {
+                    granted = this.options.security.defaultPromptResponse;
+                } else {
+                    granted = true; // Môi trường headless không có UI confirm
+                }
+            }
+
+            this._grantedPermissions.set(key, granted);
+            this.emit("permission:prompt", { mod: modObj, permission: perm, granted });
+            if (granted) {
+                this.log(`✔ [Permission] Người dùng đã ĐỒNG Ý cấp quyền nguy hiểm [${perm}] cho mod [${modObj.id}].`);
+            } else {
+                this.warn(`🛡️ [Permission] Người dùng đã TỪ CHỐI cấp quyền nguy hiểm [${perm}] cho mod [${modObj.id}].`);
+            }
+            return granted;
+        }
+
         hasPermission(modObj, perm) {
+            // 1. Master Security Policy
+            if (typeof this.policies.security === "function") {
+                const secRes = this.policies.security("permission", modObj, perm);
+                if (typeof secRes === "boolean") return secRes;
+            }
+            // 2. Custom Permission Policy
             if (typeof this.policies.permission === "function") {
                 const custom = this.policies.permission(modObj, perm);
                 if (typeof custom === "boolean") return custom;
             }
             if (!Array.isArray(modObj.permissions)) return false;
             const base = perm.split(":")[0];
-            return modObj.permissions.some(p => p === perm || p === base || p === "*" || p === `${base}:*`);
+            const hasDeclaration = modObj.permissions.some(p => p === perm || p === base || p === "*" || p === `${base}:*`);
+            if (!hasDeclaration) return false;
+
+            // 3. Nếu là quyền nguy hiểm -> Kích hoạt cơ chế hỏi xác nhận người dùng
+            if (this.isDangerousPermission(perm)) {
+                return this.checkOrPromptPermission(modObj, perm);
+            }
+            return true;
         }
 
         // --- AUDIT PIPELINE (TỰ ĐIỀU CHỈNH & KHÔNG CỰC ĐOAN) ---
@@ -1119,8 +1303,14 @@
                 try {
                     new Function(code);
                     l3 += 5;
-                } catch (e) { codeCrit = true; }
-                const bad = [/while\s*\(\s*true\s*\)\s*\{\s*\}/i, /document\.body\.innerHTML\s*=\s*['"]{2}/i];
+                } catch (e) {
+                    codeCrit = true;
+                    report.hasSyntaxError = true;
+                    report.syntaxError = e.message;
+                    modObj.hasSyntaxError = true;
+                    modObj.syntaxErrorDetails = e.message;
+                }
+                const bad = [/while\s*\(\s*true\s*\)\s*\{\s*\}/i, /document\.body\.innerHTML\s*=\s*['"]{2}/i, /__proto__/i, /process\.(dlopen|binding)/i];
                 if (!bad.some(b => b.test(code)) && !codeCrit) l3 += 10;
                 else codeCrit = true;
             }
@@ -1164,7 +1354,17 @@
 
             report.passed = report.grade !== "F" && report.criticalFailures.length === 0;
 
-            if (typeof this.policies.audit === "function") {
+            // Áp dụng Master Security Policy hoặc Custom Audit Policy từ Developer (nếu có)
+            if (typeof this.policies.security === "function") {
+                try {
+                    const secReport = this.policies.security("audit", modObj, report);
+                    if (secReport && typeof secReport === "object") {
+                        Object.assign(report, secReport);
+                    }
+                } catch (spe) {
+                    this.error(`Lỗi trong Master Security Policy audit cho mod [${modObj.id}]:`, spe);
+                }
+            } else if (typeof this.policies.audit === "function") {
                 try {
                     const customReport = this.policies.audit(modObj, report);
                     if (customReport && typeof customReport === "object") {
@@ -1268,10 +1468,42 @@
             const metaPath = path.join(dir, "mod.json");
             let meta = { id, name: id, version: "1.0.0" };
             if (fs.existsSync(metaPath)) {
-                try { Object.assign(meta, JSON.parse(fs.readFileSync(metaPath, "utf8"))); } catch (e) {}
+                try {
+                    Object.assign(meta, JSON.parse(fs.readFileSync(metaPath, "utf8")));
+                } catch (e) {
+                    const modObj = {
+                        id,
+                        name: id,
+                        version: "1.0.0",
+                        status: "error",
+                        error: `Lỗi cú pháp trong mod.json: ${e.message}`,
+                        hasSyntaxError: true,
+                        syntaxErrorDetails: e.message,
+                        enabled: false,
+                        isCore: false,
+                        isFolder: true,
+                        folderPath: dir
+                    };
+                    this.mods.push(modObj);
+                    this.error(`✖ Lỗi cú pháp mod.json tại [${id}]:`, e.message);
+                    this.emit("mod:error", { mod: modObj, error: modObj.error, stage: "discovery" });
+                    return;
+                }
             }
             const isDis = this.config.disabled.includes(meta.id || id);
             const script = path.join(dir, meta.main || "index.js");
+
+            let hasSyntaxError = false;
+            let syntaxErrorDetails = null;
+            if (fs.existsSync(script)) {
+                try {
+                    const rawScript = fs.readFileSync(script, "utf8");
+                    new Function(rawScript);
+                } catch (se) {
+                    hasSyntaxError = true;
+                    syntaxErrorDetails = se.message;
+                }
+            }
 
             const modObj = {
                 id: meta.id || id,
@@ -1283,23 +1515,40 @@
                 dependencies: Array.isArray(meta.dependencies) ? meta.dependencies : [],
                 conflicts: Array.isArray(meta.conflicts) ? meta.conflicts : [],
                 permissions: Array.isArray(meta.permissions) ? meta.permissions : [],
+                priority: meta.priority !== undefined ? meta.priority : 0,
                 strictCircuitBreaker: Boolean(meta.strictCircuitBreaker),
                 bypassAudit: Boolean(meta.bypassAudit || meta.trust),
-                status: isDis ? "disabled" : "discovered",
+                status: hasSyntaxError ? "error" : (isDis ? "disabled" : "discovered"),
+                hasSyntaxError,
+                syntaxErrorDetails,
                 isCore: false,
                 isFolder: true,
                 folderPath: dir,
                 filePath: script,
-                enabled: !isDis,
-                error: null
+                enabled: !isDis && !hasSyntaxError,
+                error: hasSyntaxError ? `Lỗi cú pháp JavaScript: ${syntaxErrorDetails}` : null
             };
             this.mods.push(modObj);
-            this.emit("mod:discovered", { mod: modObj });
+            if (hasSyntaxError) {
+                this.error(`✖ Từ chối nạp mod [${modObj.id}] do lỗi cú pháp:`, syntaxErrorDetails);
+                this.emit("mod:error", { mod: modObj, error: modObj.error, stage: "syntax" });
+            } else {
+                this.emit("mod:discovered", { mod: modObj });
+            }
         }
 
         _discoverFile(fpath, fname) {
             const raw = fs.readFileSync(fpath, "utf8");
             const baseId = fname.replace(/\.js$/i, "");
+
+            let hasSyntaxError = false;
+            let syntaxErrorDetails = null;
+            try {
+                new Function(raw);
+            } catch (se) {
+                hasSyntaxError = true;
+                syntaxErrorDetails = se.message;
+            }
 
             const getTag = (tag) => {
                 const m = raw.match(new RegExp(`@${tag}\\s+([^\\r\\n]+)`, "i"));
@@ -1332,18 +1581,26 @@
                 dependencies: getArrayTag(["dependencies", "deps", "depend"]),
                 conflicts: getArrayTag(["conflicts", "conflict"]),
                 permissions: getArrayTag(["permissions", "permission", "perms"]),
+                priority: getTag("priority") || 0,
                 strictCircuitBreaker: /@strictCircuitBreaker\s+(true|1)/i.test(raw),
                 bypassAudit: /@(bypassAudit|trust)\s+(true|1)/i.test(raw),
-                status: isDis ? "disabled" : "discovered",
+                status: hasSyntaxError ? "error" : (isDis ? "disabled" : "discovered"),
+                hasSyntaxError,
+                syntaxErrorDetails,
                 isCore: false,
                 isFolder: false,
                 filePath: fpath,
                 rawContent: raw,
-                enabled: !isDis,
-                error: null
+                enabled: !isDis && !hasSyntaxError,
+                error: hasSyntaxError ? `Lỗi cú pháp JavaScript: ${syntaxErrorDetails}` : null
             };
             this.mods.push(modObj);
-            this.emit("mod:discovered", { mod: modObj });
+            if (hasSyntaxError) {
+                this.error(`✖ Từ chối nạp mod [${modObj.id}] do lỗi cú pháp:`, syntaxErrorDetails);
+                this.emit("mod:error", { mod: modObj, error: modObj.error, stage: "syntax" });
+            } else {
+                this.emit("mod:discovered", { mod: modObj });
+            }
         }
 
         // --- THUẬT TOÁN SẮP XẾP TOPO VỚI BỘ PHÁT HIỆN CHU TRÌNH LẶP & THIẾU PHỤ THUỘC ---
@@ -1428,7 +1685,9 @@
                 return true;
             };
 
-            for (const m of modsList) {
+            // Sắp xếp các candidate mods theo thứ tự ưu tiên trước khi duyệt topo
+            const sortedCandidates = [...modsList].sort((a, b) => this.comparePriorities(a, b, "mod"));
+            for (const m of sortedCandidates) {
                 if (!visited.has(m.id)) visit(m);
             }
             return sorted;
@@ -1450,6 +1709,16 @@
                 get: () => null,
                 configurable: false
             });
+            // Khóa các cổng gọi C++ Native Addon / V8 Bindings
+            safeProc.dlopen = () => {
+                throw new Error(`[SafeProcess] Mod [${modObj.id}] gọi process.dlopen() đã bị chặn.`);
+            };
+            safeProc.binding = (name) => {
+                throw new Error(`[SafeProcess] Mod [${modObj.id}] gọi process.binding('${name}') đã bị chặn.`);
+            };
+            safeProc._linkedBinding = (name) => {
+                throw new Error(`[SafeProcess] Mod [${modObj.id}] gọi process._linkedBinding('${name}') đã bị chặn.`);
+            };
             return safeProc;
         }
 
@@ -1569,11 +1838,19 @@
             const safeData = path.resolve(this.paths.modsDir, "_data", modObj.id);
 
             const isAllowed = (target, op = "write") => {
+                if (typeof this.policies.security === "function") {
+                    const sec = this.policies.security("fs", modObj, target, { op });
+                    if (typeof sec === "boolean") return sec;
+                }
                 if (typeof this.policies.fs === "function") {
                     const custom = this.policies.fs(modObj, target, op);
                     if (typeof custom === "boolean") return custom;
                 }
                 if (!target) return false;
+                if (typeof target === "string" && target.includes("\0")) {
+                    this.warn(`[Safe-FS] Phát hiện tấn công Null-Byte Poison tại đường dẫn: ${JSON.stringify(target)}`);
+                    return false;
+                }
                 const r = path.isAbsolute(target) ? path.resolve(target) : path.resolve(root, target);
                 const r1 = path.relative(root, r);
                 const r2 = path.relative(safeData, r);
@@ -1747,6 +2024,15 @@
                     task: mod.name
                 });
 
+                // NẾU PHÁT HIỆN SAI CÚ PHÁP (DÙ LÀ LỖI NHỎ NHẤT) -> LẬP TỨC BÁO LỖI VÀ TỪ CHỐI THỰC THI
+                if (mod.hasSyntaxError || (mod.audit && (mod.audit.hasSyntaxError || mod.audit.syntaxError))) {
+                    mod.status = "error";
+                    mod.error = `Lỗi cú pháp JavaScript: ${mod.syntaxErrorDetails || (mod.audit && mod.audit.syntaxError)}`;
+                    this.error(`✖ Từ chối thực thi mod [${mod.id}] do lỗi cú pháp:`, mod.error);
+                    this.emit("mod:error", { mod, error: mod.error, stage: "syntax" });
+                    continue;
+                }
+
                 if (mod.audit && !mod.audit.passed) {
                     if (this.isFeatureEnabled("strictQuarantine")) {
                         mod.status = "quarantined";
@@ -1773,6 +2059,10 @@
         }
 
         _execute(modObj) {
+            if (modObj.status === "error") {
+                this.error(`✖ Bỏ qua thực thi mod [${modObj.id}] do trạng thái lỗi:`, modObj.error);
+                return;
+            }
             const { sandbox, staged } = this.createSandbox(modObj);
             const sReq = this.createRequire(modObj);
             const sFs = this.createSafeFs(modObj) || fs;

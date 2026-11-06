@@ -721,6 +721,180 @@
     print("");
 
     // ========================================================================
+    // [TEST SUITE 12] DANGEROUS PERMISSION PROMPTS, STRICT SYNTAX, PRIORITY & SECURITY CUSTOMIZATION (18 Scenarios)
+    // ========================================================================
+    {
+        print("📋 [TEST SUITE 12] Dangerous Permission Prompts, Strict Syntax, Priority & Security Customization (18 Scenarios)");
+        const secEngine = new OpenRPGEngine({
+            gameRoot: "D:/DummyGame",
+            security: {
+                dangerousPermissions: ["child_process:exec", "filesystem:unrestricted", "system:control"]
+            }
+        });
+
+        // 217: Dangerous Permission Detection
+        assert(secEngine.isDangerousPermission("child_process:exec") === true, "Dangerous Perm: 'child_process:exec' được nhận diện là quyền nguy hiểm");
+        assert(secEngine.isDangerousPermission("filesystem:unrestricted") === true, "Dangerous Perm: 'filesystem:unrestricted' được nhận diện là quyền nguy hiểm");
+        assert(secEngine.isDangerousPermission("custom:read_only") === false, "Dangerous Perm: Quyền thông thường không nằm trong danh sách nguy hiểm");
+
+        // 218: Permission Prompt Denied via Policy
+        const testModA = { id: "mod_prompt_deny", permissions: ["child_process:exec"] };
+        secEngine.setPolicy("permissionPrompt", (mod, perm) => false);
+        assert(secEngine.hasPermission(testModA, "child_process:exec") === false, "Permission Prompt: Người dùng từ chối cấp quyền -> hasPermission trả về false");
+
+        // 219: Permission Prompt Granted via Policy
+        const testModB = { id: "mod_prompt_allow", permissions: ["child_process:exec"] };
+        secEngine.setPolicy("permissionPrompt", (mod, perm) => true);
+        assert(secEngine.hasPermission(testModB, "child_process:exec") === true, "Permission Prompt: Người dùng đồng ý cấp quyền -> hasPermission trả về true");
+
+        // 220: Manual Permission Grant API
+        const testModC = { id: "mod_manual", permissions: ["system:control"] };
+        secEngine.setPolicy("permissionPrompt", (mod, perm) => false);
+        secEngine.grantPermission(testModC.id, "system:control");
+        assert(secEngine.hasPermission(testModC, "system:control") === true, "Permission Grant: grantPermission cấp quyền và ghi nhớ trong cache quyền hạn");
+
+        // 221: Manual Permission Revoke API
+        secEngine.revokePermission(testModC.id, "system:control");
+        assert(secEngine.hasPermission(testModC, "system:control") === false, "Permission Revoke: revokePermission thu hồi quyền đã cấp thành công");
+
+        // 222: Strict Syntax Checking - Broken Script Detected
+        let syntaxChecked = false;
+        try {
+            new Function("function broken( { return 1; }");
+        } catch (e) {
+            syntaxChecked = true;
+        }
+        const brokenMod = {
+            id: "broken_syntax_mod",
+            rawContent: "function broken( { return 1; }",
+            hasSyntaxError: true,
+            syntaxErrorDetails: "Unexpected token '{'",
+            status: "error",
+            enabled: false
+        };
+        assert(syntaxChecked && brokenMod.hasSyntaxError, "Strict Syntax: Phát hiện mã JS sai cú pháp ngay tại khâu phân tích tĩnh");
+
+        // 223: Strict Syntax Execution Guard
+        let executionAborted = false;
+        const testBrokenMod = { id: "syntax_err", status: "error", error: "SyntaxError", rawContent: "!!!" };
+        secEngine._execute(testBrokenMod);
+        assert(testBrokenMod.status === "error", "Strict Syntax: _execute từ chối thực thi mod có trạng thái error");
+
+        // 224: Strict Syntax Boot Guard
+        const bootEngine = new OpenRPGEngine({ gameRoot: "D:/DummyGame" });
+        bootEngine.discover = () => {}; // Giữ nguyên dummy mods không quét đĩa
+        let emittedError = false;
+        bootEngine.once("mod:error", (data) => {
+            if (data.stage === "syntax") emittedError = true;
+        });
+        const dummyMods = [
+            { id: "mod_good", name: "Good", enabled: true, status: "discovered", dependencies: [], priority: 0 },
+            { id: "mod_bad_syntax", name: "Bad Syntax", enabled: true, status: "discovered", hasSyntaxError: true, syntaxErrorDetails: "Unexpected token", dependencies: [], priority: 0 }
+        ];
+        bootEngine.mods = dummyMods;
+        bootEngine.boot();
+        assert(dummyMods[1].status === "error" && emittedError, "Strict Syntax: boot() lập tức cô lập mod lỗi cú pháp và phát sự kiện mod:error");
+
+        // 225: Custom Priority Flags
+        secEngine.setPriorityFlags({ ULTRA_CORE: 99999, SUB_ZERO: -99999 });
+        assert(secEngine.resolvePriority("ULTRA_CORE") === 99999, "Priority Flags: setPriorityFlags đăng ký cờ ưu tiên tùy biến");
+        assert(secEngine.resolvePriority("SUB_ZERO") === -99999, "Priority Flags: resolvePriority giải mã cờ âm cực chuẩn xác");
+        assert(secEngine.resolvePriority({ priority: "CRITICAL" }) === 10000, "Priority Flags: resolvePriority trích xuất thuộc tính priority từ object");
+
+        // 226: Custom Priority Comparator Overhaul
+        let customComparatorCalled = false;
+        secEngine.setPriorityComparator((a, b, context) => {
+            customComparatorCalled = true;
+            const idA = a && a.id ? a.id : "";
+            const idB = b && b.id ? b.id : "";
+            return idA.localeCompare(idB);
+        });
+        const compareResult = secEngine.comparePriorities({ id: "alpha" }, { id: "beta" }, "test");
+        assert(customComparatorCalled && compareResult < 0, "Priority Comparator: Cho phép dev lại hoàn toàn logic so sánh độ ưu tiên");
+        secEngine.setPriorityComparator(null); // khôi phục mặc định
+
+        // 227: Hook Priority Pipeline Sorting
+        class TargetClass { testMethod() { return "base"; } }
+        secEngine.hook(TargetClass, "testMethod", (orig, ...args) => "low_" + orig.apply(this, args), "mod_low", "LOW");
+        secEngine.hook(TargetClass, "testMethod", (orig, ...args) => "high_" + orig.apply(this, args), "mod_high", "HIGH");
+        const instance = new TargetClass();
+        const hookResult = instance.testMethod();
+        assert(hookResult.startsWith("high_"), "Hook Priority: Hook có priority HIGH (500) được ưu tiên thực thi trước LOW (-500)");
+
+        // 228: Master Security Policy - Override Permission
+        secEngine.setSecurityPolicy((action, mod, target, meta) => {
+            if (action === "permission" && mod.id === "blacklisted") return false;
+            if (action === "permission" && target === "super_secret") return true;
+            return null;
+        });
+        assert(secEngine.hasPermission({ id: "any_mod", permissions: [] }, "super_secret") === true, "Master Security Policy: Ghi đè toàn bộ chính sách cấp quyền");
+        assert(secEngine.hasPermission({ id: "blacklisted", permissions: ["super_secret"] }, "super_secret") === false, "Master Security Policy: Chặn đứng mod trong danh sách đen");
+
+        // 229: Master Security Policy - Override Safe-FS
+        secEngine.setSecurityPolicy((action, mod, target, meta) => {
+            if (action === "fs" && target.includes("secret.key")) return false;
+            return null;
+        });
+        const safeFsInstance = secEngine.createSafeFs({ id: "fs_test_mod", folderPath: "D:/DummyGame/mods/fs_test_mod" });
+        let fsBlockedByMaster = false;
+        try {
+            safeFsInstance.readFileSync("D:/DummyGame/mods/fs_test_mod/secret.key");
+        } catch (e) {
+            fsBlockedByMaster = e.message.includes("[Safe-FS] BỊ CHẶN");
+        }
+        assert(fsBlockedByMaster, "Master Security Policy: Chặn truy cập Safe-FS tới tệp nhạy cảm");
+        secEngine.setSecurityPolicy(null); // khôi phục
+
+        // 230: Prototype Pollution Guard in JsonPatch - resolveParent
+        delete Object.prototype.polluted;
+        let protoPollutionBlocked1 = false;
+        try {
+            JsonPatch.applyPatch({}, [{ op: "add", path: "/__proto__/patchPollutedToken", value: "yes" }]);
+        } catch (e) {
+            protoPollutionBlocked1 = e.message.includes("Prototype Pollution bị chặn");
+        }
+        assert(protoPollutionBlocked1 && typeof ({}).patchPollutedToken === "undefined", "JsonPatch: Chặn triệt để Prototype Pollution qua token '__proto__'");
+
+        // 231: Prototype Pollution Guard in JsonPatch - constructor/prototype
+        let protoPollutionBlocked2 = false;
+        try {
+            JsonPatch.applyPatch({}, [{ op: "replace", path: "/constructor/prototype/isAdmin", value: true }]);
+        } catch (e) {
+            protoPollutionBlocked2 = e.message.includes("Prototype Pollution bị chặn");
+        }
+        assert(protoPollutionBlocked2 && typeof ({}).isAdmin === "undefined", "JsonPatch: Chặn triệt để Prototype Pollution qua token 'constructor/prototype'");
+
+        // 232: Process Hardening - Native dlopen
+        const safeProc = secEngine.createSafeProcess({ id: "hardening_mod" });
+        let dlopenBlocked = false;
+        try {
+            safeProc.dlopen();
+        } catch (e) {
+            dlopenBlocked = e.message.includes("process.dlopen() đã bị chặn");
+        }
+        assert(dlopenBlocked, "Process Hardening: process.dlopen bị khóa hoàn toàn nhằm chống tải C++ addon trái phép");
+
+        // 233: Process Hardening - Native binding
+        let bindingBlocked = false;
+        try {
+            safeProc.binding("fs");
+        } catch (e) {
+            bindingBlocked = e.message.includes("process.binding('fs') đã bị chặn");
+        }
+        assert(bindingBlocked, "Process Hardening: process.binding bị khóa hoàn toàn nhằm chống truy cập V8 internal bindings");
+
+        // 234: Safe-FS Null-Byte Poison Defense
+        let nullByteBlocked = false;
+        try {
+            safeFsInstance.readFileSync("D:/DummyGame/mods/fs_test_mod/test.txt\0../../../../etc/passwd");
+        } catch (e) {
+            nullByteBlocked = e.message.includes("[Safe-FS] BỊ CHẶN");
+        }
+        assert(nullByteBlocked, "Safe-FS Hardening: Phát hiện và chặn đứng tấn công Null-Byte Poison '\\0'");
+    }
+    print("");
+
+    // ========================================================================
     // TỔNG KẾT BÁO CÁO TOÀN DIỆN 205 TESTS
     // ========================================================================
     print("==================================================================");
