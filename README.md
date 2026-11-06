@@ -19,7 +19,7 @@ Nếu bạn từng chơi game và muốn cài thêm các bản mở rộng, nhâ
 * *Lỡ tay xóa mod là mất trắng file lưu game (Save Data) cày cuốc hàng chục giờ?*
 * *Các bản mod đánh nhau, gây lỗi xung đột không rõ nguyên nhân?*
 
-👉 **OpenRPGLoader ra đời để giải quyết triệt để những nỗi lo đó!**
+👉 **OpenRPGLoader ra đời nhằm giảm thiểu tối đa những nỗi lo đó trong đa số các trường hợp!**
 
 Lấy cảm hứng từ hệ sinh thái modding hiện đại (tựa như Minecraft Forge), **OpenRPGLoader** là một "trợ lý vô hình" hoạt động ngay bên trong game. Bạn không cần biết lập trình hay chỉnh sửa file phức tạp, OpenRPGLoader sẽ tự động nhận diện, sắp xếp và kích hoạt các bản mod một cách mượt mà nhất.
 
@@ -28,10 +28,10 @@ Lấy cảm hứng từ hệ sinh thái modding hiện đại (tựa như Minecr
 ## ✨ Điểm Nổi Bật Dành Cho Game Thủ
 
 ### 🛡️ 1. Khiên Bảo Vệ Save Game (Save Shield)
-Không còn nỗi sợ mất save game! Khi bạn tháo gỡ một bản mod đã từng dùng, OpenRPGLoader sẽ tự động nhận biết và thanh lọc an toàn các dữ liệu "mồ côi" (vật phẩm, trang bị, nhân vật của mod cũ). Trò chơi vẫn tiếp tục chạy bình thường mà không bị crash hay kẹt file lưu.
+Giảm thiểu tối đa nguy cơ hỏng save game! Khi bạn tháo gỡ một bản mod đã từng dùng, OpenRPGLoader sẽ tự động nhận biết và thanh lọc các dữ liệu "mồ côi" (vật phẩm, trang bị, nhân vật của mod cũ) trong đa số trường hợp. Trò chơi có thể tiếp tục chạy bình thường mà hạn chế tối đa nguy cơ crash hay kẹt file lưu.
 
 ### ⚡ 2. Cầu Dao Tự Ngắt Lỗi (Circuit Breaker)
-Nếu một bản mod bị lỗi hoặc thiếu sót khi tính toán sát thương, hệ thống sẽ tự động cách ly riêng bản mod đó mà **không làm sập cả trò chơi**. Bạn vẫn có thể tiếp tục hoàn thành trận chiến hoặc lưu game an toàn thay vì bị văng đột ngột ra màn hình desktop.
+Nếu một bản mod bị lỗi hoặc thiếu sót khi tính toán sát thương, hệ thống sẽ tự động cách ly riêng bản mod đó để hạn chế làm sập cả trò chơi trong đa số trường hợp. Bạn có cơ hội tiếp tục hoàn thành trận chiến hoặc lưu game an toàn thay vì bị văng đột ngột ra màn hình desktop.
 
 ### 📋 3. Menu Quản Lý Mod Ngay Trong Game
 * Mở trực tiếp từ **Màn hình chính (Title Screen)** hoặc **Menu tạm dừng (Pause Menu)**.
@@ -85,7 +85,7 @@ Việc cài đặt mod vào game giờ đây chỉ mất chưa đầy 30 giây:
 <summary><b>1. Cài mod có làm hỏng file Save game cũ của tôi không?</b></summary>
 <br>
 
-**Hoàn toàn không!** Nhờ tính năng **Save Shield**, toàn bộ dữ liệu lưu game của bạn luôn được bảo vệ an toàn. Ngay cả khi bạn tháo gỡ một bản mod từng thêm vào các vật phẩm hoặc nhân vật mới, OpenRPGLoader sẽ tự động dọn sạch các tệp mồ côi và khôi phục trạng thái chuẩn để bạn tiếp tục chuyến phiêu lưu mà không bị kẹt hay lỗi file save.
+**Trong đa số các trường hợp, dữ liệu của bạn sẽ được bảo vệ an toàn!** Nhờ tính năng **Save Shield**, OpenRPGLoader sẽ tự động nhận diện và thanh lọc các dữ liệu mồ côi (vật phẩm, kỹ năng từ mod đã gỡ) để tránh làm kẹt file lưu. Dù vậy, trên thực tế không thể chắc chắn 100% trong mọi tình huống (nhất là khi mod can thiệp quá sâu vào biến hệ thống nội tại của game), vì thế bạn vẫn nên chủ động sao lưu (backup) các file save quan trọng trước khi thử nghiệm mod mới.
 </details>
 
 <details>
@@ -109,7 +109,7 @@ Rất đơn giản! Bạn chỉ cần giải nén file đó ra thành một thư
 <summary><b>4. Tôi có cần cài thêm phần mềm hỗ trợ nào khác không?</b></summary>
 <br>
 
-**Không cần bất kỳ phần mềm nào khác!** OpenRPGLoader đã được tích hợp sẵn hoàn toàn vào trò chơi. Bạn không cần cài Node.js, Python hay các ứng dụng quản lý bên thứ ba nào. Mọi thao tác chỉ đơn giản là tải mod về và thả vào thư mục `mods/`.
+**Không cần bất kỳ phần mềm nào khác!** OpenRPGLoader đã được tích hợp trực tiếp vào trò chơi. Bạn không cần cài Node.js, Python hay các ứng dụng quản lý bên thứ ba nào. Mọi thao tác chỉ đơn giản là tải mod về và thả vào thư mục `mods/`.
 </details>
 
 <details>
@@ -123,21 +123,23 @@ Vào menu **"Bản Mod (Mods)"** trong game, tìm đến bản mod bạn muốn 
 <summary><b>6. Nếu hai bản mod bị xung đột nhau thì game có bị văng (crash) không?</b></summary>
 <br>
 
-**Không!** Hệ thống sẽ chủ động phát hiện sự xung đột trước khi game chạy. Thay vì để trò chơi bị văng đột ngột ra màn hình máy tính, OpenRPGLoader sẽ hiển thị thông báo chi tiết trong menu mod cho biết chính xác hai bản mod nào đang va chạm nhau để bạn dễ dàng lựa chọn giữ lại bản mod ưng ý.
+**Trong đa số trường hợp là không!** Hệ thống sẽ chủ động phát hiện sự xung đột tài nguyên hoặc xung đột được khai báo trong manifest trước khi game chạy, sau đó hiển thị cảnh báo chi tiết trong menu mod thay vì để game crash bất ngờ. Tuy nhiên, nếu hai mod xảy ra xung đột logic runtime quá sâu mà tác giả không khai báo trước, lỗi vẫn có thể xảy ra; khi đó bạn có thể nhấn phím F8 để tạm tắt bản mod nghi ngờ.
 </details>
 
 <details>
 <summary><b>7. Tôi có thể cài bao nhiêu bản mod cùng một lúc?</b></summary>
 <br>
 
-**Không giới hạn số lượng!** OpenRPGLoader được tối ưu hóa để có thể nạp hàng chục bản mod cùng lúc trong thời gian chưa tới một cái chớp mắt, đồng thời tự động tính toán thứ tự nạp chuẩn xác nhất (Topological Sort) để tất cả hoạt động hài hòa.
+**Không giới hạn về mặt phần mềm — MIỄN LÀ MÁY CỦA BẠN CHỊU ĐƯỢC!** OpenRPGLoader không đặt ra mức trần số lượng bản mod có thể nạp và luôn tự động tính toán thứ tự nạp tối ưu (Topological Sort). Tuy nhiên, giới hạn thực tế sẽ phụ thuộc vào dung lượng RAM, CPU và sức mạnh phần cứng máy tính của bạn khi trò chơi phải gánh đồng thời khối lượng lớn dữ liệu, âm thanh và hình ảnh từ các bản mod.
 </details>
 
 <details>
 <summary><b>8. Cài nhiều mod có làm game bị giật, lag hoặc tụt FPS không?</b></summary>
 <br>
 
-**Hầu như không ảnh hưởng!** OpenRPGLoader sử dụng cơ chế lưu bộ nhớ đệm kiểm định (Audit Cache SHA-256) và can thiệp thông minh chỉ khi cần thiết. Quá trình kiểm tra mod lúc mở game diễn ra trong chưa đầy 1 phần nghìn giây và không tiêu tốn tài nguyên xử lý đồ họa khi bạn đang chơi.
+**Hầu như không ảnh hưởng đến hiệu năng cốt lõi của game!** Bản thân OpenRPGLoader chỉ tiêu tốn tài nguyên cực nhỏ nhờ cơ chế lưu bộ nhớ đệm kiểm định (Audit Cache SHA-256) và can thiệp nhẹ nhàng đúng lúc. 
+
+**Tuy nhiên**, hiệu năng rất có thể bị ảnh hưởng nếu bạn cài **HÀNG LOẠT** các bản mod nặng, hoặc nếu bản thân các bản mod đó chứa tài nguyên hình ảnh đồ họa độ phân giải quá cao, âm thanh chưa nén, hoặc mã nguồn xử lý liên tục trong vòng lặp game khiến máy bị quá tải tài nguyên.
 </details>
 
 <details>
@@ -145,7 +147,7 @@ Vào menu **"Bản Mod (Mods)"** trong game, tìm đến bản mod bạn muốn 
 <br>
 
 Đây là hệ thống đánh giá chất lượng và độ an toàn của mod:
-* **`[S]` & `[A]`**: Mod đạt chuẩn tối ưu, an toàn và tương thích hoàn hảo.
+* **`[S]` & `[A]`**: Mod đạt chuẩn tối ưu, an toàn và tương thích cao.
 * **`[B]` & `[C]`**: Mod hoạt động ổn định nhưng có thể chứa mã nguồn chưa tối ưu hoặc thiếu một số mô tả phụ trợ.
 * **`[⚠️]` (Cảnh báo)**: Mod có sử dụng một số hàm nhạy cảm hoặc được đóng gói mã hóa. OpenRPGLoader vẫn cho phép chạy bình thường nhưng gắn cảnh báo để bạn lưu tâm.
 </details>
@@ -154,7 +156,7 @@ Vào menu **"Bản Mod (Mods)"** trong game, tìm đến bản mod bạn muốn 
 <summary><b>10. OpenRPGLoader có hỗ trợ các bản mod Việt hóa hoặc thay đổi giao diện không?</b></summary>
 <br>
 
-**Có, hỗ trợ hoàn hảo!** Nhờ tính năng **Virtual Asset Resolver** và **Data Patching**, các bản mod Việt hóa (hình ảnh nút bấm, hội thoại, tên kỹ năng, âm thanh lồng tiếng) có thể tự động thay thế tài nguyên gốc của game một cách mượt mà mà không làm thay đổi hay làm hỏng bất kỳ file gốc nào.
+**Có, hỗ trợ rất tốt trong đa số trường hợp!** Nhờ tính năng **Virtual Asset Resolver** và **Data Patching**, các bản mod Việt hóa (hình ảnh nút bấm, hội thoại, tên kỹ năng, âm thanh lồng tiếng) có thể tự động thay thế tài nguyên gốc của game một cách mượt mà mà không làm thay đổi hay làm hỏng file gốc.
 </details>
 
 <details>
@@ -165,22 +167,22 @@ Vào menu **"Bản Mod (Mods)"** trong game, tìm đến bản mod bạn muốn 
 </details>
 
 <details>
-<summary><b>12. Tôi có thể chơi game ngoại tuyến (offline) hoàn toàn khi đã cài đặt OpenRPGLoader không?</b></summary>
+<summary><b>12. Tôi có thể chơi game ngoại tuyến (offline) khi đã cài đặt OpenRPGLoader không?</b></summary>
 <br>
 
-**Hoàn toàn được!** OpenRPGLoader hoạt động độc lập 100% trên máy tính của bạn, không yêu cầu kết nối mạng, không cần đăng nhập tài khoản và không kiểm tra bản quyền trực tuyến.
+**Được!** OpenRPGLoader hoạt động độc lập ngoại tuyến trên máy tính của bạn, không yêu cầu kết nối mạng, không cần đăng nhập tài khoản và không kiểm tra bản quyền trực tuyến.
 </details>
 
 <details>
 <summary><b>13. Liệu OpenRPGLoader có phải là một bản chỉnh sửa file game không phép không?</b></summary>
 <br>
 
-**Không.** OpenRPGLoader là một công cụ nạp động (dynamic in-memory loader) hoàn toàn độc lập. Cơ chế của nó là can thiệp logic tạm thời trên bộ nhớ RAM khi game đang khởi chạy, tuyệt đối **không chỉnh sửa, không ghi đè, không bẻ khóa DRM và không phân phối lại** bất kỳ tệp dữ liệu gốc (hình ảnh, âm thanh, cốt truyện hay mã nguồn game) có bản quyền nào của tác giả trò chơi. 
+**Không.** OpenRPGLoader là một công cụ nạp động (dynamic in-memory loader) độc lập. Cơ chế của nó là can thiệp logic tạm thời trên bộ nhớ RAM khi game đang khởi chạy, tuyệt đối **không chỉnh sửa, không ghi đè, không bẻ khóa DRM và không phân phối lại** bất kỳ tệp dữ liệu gốc (hình ảnh, âm thanh, cốt truyện hay mã nguồn game) có bản quyền nào của tác giả trò chơi. 
 
 Về mặt căn cứ pháp lý:
 * **Hoa Kỳ (US Law)**: Hành vi này được bảo vệ theo học thuyết *Sử dụng hợp lý (Fair Use - 17 U.S.C. § 107)* và án lệ kinh điển *Lewis Galoob Toys, Inc. v. Nintendo of America, Inc. (1992)* — trong đó Tòa án khẳng định các công cụ can thiệp tạm thời vào bộ nhớ RAM khi người dùng chơi game không tạo ra tác phẩm phái sinh vi phạm bản quyền nếu không sao chép lại mã game gốc.
-* **Liên minh Châu Âu (EU Law)**: Điều 5(3) của *Chỉ thị 2009/24/EC về Bảo vệ pháp lý các chương trình máy tính* quy định rõ ràng rằng người có quyền sử dụng hợp pháp một bản sao phần mềm hoàn toàn được quyền quan sát, nghiên cứu hoặc thử nghiệm hoạt động của phần mềm đó nhằm mục đích xác định các nguyên tắc và kỹ thuật cơ bản của chương trình.
-* **Việt Nam**: Theo *Luật Sở hữu trí tuệ Việt Nam* (Khoản 1 Điều 20 và Điều 25), việc người dùng cá nhân nghiên cứu, thưởng thức và tạo công cụ hỗ trợ trải nghiệm hợp lý mà không nhằm mục đích thương mại xâm hại đến quyền khai thác bình thường của tác giả trò chơi là hoàn toàn phù hợp.
+* **Liên minh Châu Âu (EU Law)**: Điều 5(3) của *Chỉ thị 2009/24/EC về Bảo vệ pháp lý các chương trình máy tính* quy định rõ ràng rằng người có quyền sử dụng hợp pháp một bản sao phần mềm được quyền quan sát, nghiên cứu hoặc thử nghiệm hoạt động của phần mềm đó nhằm mục đích xác định các nguyên tắc và kỹ thuật cơ bản của chương trình.
+* **Việt Nam**: Theo *Luật Sở hữu trí tuệ Việt Nam* (Khoản 1 Điều 20 và Điều 25), việc người dùng cá nhân nghiên cứu, thưởng thức và tạo công cụ hỗ trợ trải nghiệm hợp lý mà không nhằm mục đích thương mại xâm hại đến quyền khai thác bình thường của tác giả trò chơi là phù hợp.
 </details>
 
 <details>
@@ -196,7 +198,7 @@ Về mặt căn cứ pháp lý:
 
 **KHÔNG!** OpenRPGLoader được thiết kế chuyên biệt và tối ưu hóa cho môi trường NW.js trên máy tính PC (Desktop / Laptop) chạy hệ điều hành Windows, macOS hoặc Linux. 
 
-Các bản phát hành trò chơi trên nền tảng di động (chạy qua Android APK, iOS App, WebView hoặc Cordova) không có quyền truy cập hệ thống tệp và runtime Node.js của NW.js, do đó OpenRPGLoader **hoàn toàn không hỗ trợ và không thể cài đặt mod trên điện thoại**.
+Các bản phát hành trò chơi trên nền tảng di động (chạy qua Android APK, iOS App, WebView hoặc Cordova) không có quyền truy cập hệ thống tệp và runtime Node.js của NW.js, do đó OpenRPGLoader **không hỗ trợ cài đặt mod trên các thiết bị điện thoại**.
 </details>
 
 <details>
@@ -205,7 +207,7 @@ Các bản phát hành trò chơi trên nền tảng di động (chạy qua Andr
 
 **KHÔNG.** M.A.P.L.E MAGI Labs chỉ duy trì và bảo đảm chất lượng cho phiên bản gốc chính thức được phát hành tại kho lưu trữ của chúng tôi. 
 
-Điều khoản và chính sách của OpenRPGLoader **CHỈ CÓ TÁC DỤNG VỚI BẢN GỐC CHÍNH THỨC**, hoàn toàn **KHÔNG PHẢI là điều khoản chung** cho toàn bộ các bản mod hay **toàn bộ các Mod Loader khác dựa trên nhân này**. Bất kỳ phiên bản phái sinh, chỉnh sửa, đổi tên hoặc đóng gói lại do bên thứ ba phát hành sẽ do chính bên thứ ba đó tự ban hành điều khoản và tự chịu 100% trách nhiệm trước người dùng và pháp luật. Chiếu theo điều khoản của Giấy phép nguồn mở **MIT License**, phần mềm được cung cấp theo nguyên trạng (*"AS IS"*), không đi kèm bất kỳ cam kết hay bảo hành trách nhiệm pháp lý nào đối với các bản chỉnh sửa không chính thức.
+Điều khoản và chính sách của OpenRPGLoader **CHỈ CÓ TÁC DỤNG VỚI BẢN GỐC CHÍNH THỨC**, **KHÔNG PHẢI là điều khoản chung** cho toàn bộ các bản mod hay **toàn bộ các Mod Loader khác dựa trên nhân này**. Bất kỳ phiên bản phái sinh, chỉnh sửa, đổi tên hoặc đóng gói lại do bên thứ ba phát hành sẽ do chính bên thứ ba đó tự ban hành điều khoản và tự chịu trách nhiệm trước người dùng và pháp luật. Chiếu theo điều khoản của Giấy phép nguồn mở **MIT License**, phần mềm được cung cấp theo nguyên trạng (*"AS IS"*), không đi kèm bất kỳ cam kết hay bảo hành trách nhiệm pháp lý nào đối với các bản chỉnh sửa không chính thức.
 </details>
 
 <details>
@@ -215,7 +217,7 @@ Các bản phát hành trò chơi trên nền tảng di động (chạy qua Andr
 Chúng tôi luôn hoan nghênh những đóng góp chất lượng từ cộng đồng! Quy trình rất đơn giản:
 1. **Fork** kho lưu trữ mã nguồn chính thức của dự án.
 2. Tạo nhánh mới cho tính năng hoặc bản sửa lỗi của bạn (`feature/ten-tinh-nang` hoặc `fix/ten-loi`).
-3. Chạy bộ kiểm thử tự động tại `test/test_runner.js` để đảm bảo 100% các bài kiểm tra đều vượt qua mà không làm gãy các tính năng cũ.
+3. Chạy bộ kiểm thử tự động tại `test/test_runner.js` để đảm bảo toàn bộ các bài kiểm tra đều vượt qua mà không làm gãy các tính năng cũ.
 4. Mở một **Pull Request (PR)** kèm mô tả rõ ràng để đội ngũ phụ trách thẩm định và sáp nhập vào dự án.
 </details>
 
@@ -234,28 +236,28 @@ Chúng tôi chủ trương giữ cho phần lõi luôn ổn định, tránh vi�
 
 **CÓ!** Tuy vậy, chúng tôi chỉ **ỨNG DỤNG A.I** (như trợ lý Google Antigravity cùng các mô hình lập trình hiện đại) vào một số tác vụ nhất định như: tạo bản phác thảo mã nguồn, tối ưu hóa thuật toán và hỗ trợ viết bài kiểm thử tự động.
 
-Đồng thời, **mọi dòng mã do A.I đề xuất đều đã được đội ngũ kỹ sư con người trực tiếp rà soát, tái cấu trúc và kiểm định thủ công**, kết hợp cùng bộ kiểm thử nghiêm ngặt đạt tỉ lệ chuẩn xác 100% để bảo đảm **KHÔNG bị lỗi** trước khi đến tay người dùng.
+Đồng thời, **mọi dòng mã do A.I đề xuất đều đã được đội ngũ kỹ sư con người trực tiếp rà soát, tái cấu trúc và kiểm định thủ công**, kết hợp cùng bộ kiểm thử tự động nghiêm ngặt nhằm hạn chế tối đa sai sót và đảm bảo sự ổn định trước khi đến tay người dùng (dù trong thực tế không phần mềm nào có thể đảm bảo 100% không bao giờ gặp lỗi trong mọi cấu hình máy).
 </details>
 
 <details>
 <summary><b>20. OpenRPGLoader có an toàn trước mã độc (malware, virus) không?</b></summary>
 <br>
 
-**Rất an toàn!** OpenRPGLoader tích hợp hệ thống **Safe-FS Sandbox** chặn đứng các hành vi nguy hiểm như tự ý ghi đè file hệ thống ngoài thư mục game (Path Traversal) và quét tĩnh cú pháp mod. Tuy nhiên, để đảm bảo an toàn tuyệt đối cho máy tính, bạn luôn nên tải mod từ các tác giả và nguồn cộng đồng đáng tin cậy.
+**Rất an toàn!** OpenRPGLoader tích hợp hệ thống **Safe-FS Sandbox** chặn đứng các hành vi nguy hiểm như tự ý ghi đè file hệ thống ngoài thư mục game (Path Traversal) và quét tĩnh cú pháp mod. Tuy nhiên, để đảm bảo an toàn cao nhất cho máy tính, bạn luôn nên tải mod từ các tác giả và nguồn cộng đồng đáng tin cậy.
 </details>
 
 <details>
 <summary><b>21. OpenRPGLoader có thu thập dữ liệu cá nhân hay kết nối Internet ngầm không?</b></summary>
 <br>
 
-**Hoàn toàn KHÔNG!** OpenRPGLoader hoạt động 100% ngoại tuyến (offline), không tích hợp bất kỳ công cụ theo dõi hành vi (telemetry) nào, không thu thập thông tin thiết bị và không tự ý gửi bất kỳ gói tin nào ra mạng Internet. Sự riêng tư và an toàn dữ liệu của bạn luôn được đặt lên hàng đầu.
+**KHÔNG!** OpenRPGLoader hoạt động ngoại tuyến (offline), không tích hợp bất kỳ công cụ theo dõi hành vi (telemetry) nào, không thu thập thông tin thiết bị và không tự ý gửi bất kỳ gói tin nào ra mạng Internet. Sự riêng tư và an toàn dữ liệu của bạn luôn được đặt lên hàng đầu.
 </details>
 
 ---
 
 ## 📜 Giấy Phép & Miễn Trừ Trách Nhiệm
 
-* Dự án được phát hành hoàn toàn miễn phí dưới giấy phép **[MIT License](LICENSE)**. Tự do cho cộng đồng game thủ và các nhà sáng tạo nội dung.
+* Dự án được phát hành miễn phí dưới giấy phép **[MIT License](LICENSE)**. Tự do cho cộng đồng game thủ và các nhà sáng tạo nội dung.
 * Vui lòng đọc kỹ toàn bộ ranh giới kỹ thuật và điều khoản miễn trừ trách nhiệm pháp lý chính thức tại: **[DISCLAIMER.md](DISCLAIMER.md)**.
 * Dành cho modder và lập trình viên: Truy cập bộ tài liệu kỹ thuật chuẩn Diátaxis & Chromium tại: **[Dev Docs/README.md](Dev%20Docs/README.md)**.
 
