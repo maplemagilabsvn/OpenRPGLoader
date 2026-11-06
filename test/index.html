@@ -9,18 +9,24 @@
     <script>
         const fs = require('fs');
         const path = require('path');
+        const testDir = path.resolve(process.cwd(), 'OpenRPGLoader', 'test');
+        const logFile = path.join(testDir, 'test_results.log');
+        const errFile = path.join(testDir, 'test_error.log');
+
         try {
-            require('./test_runner.js');
+            const runnerFile = path.join(testDir, 'test_runner.js');
+            require(runnerFile);
         } catch (err) {
-            fs.writeFileSync(path.join(__dirname, 'test_error.log'), String(err && err.stack ? err.stack : err), 'utf8');
+            fs.writeFileSync(errFile, String(err && err.stack ? err.stack : err), 'utf8');
         }
+
         setTimeout(() => {
-            if (typeof nw !== 'undefined' && nw.App) {
+            if (typeof nw !== 'undefined' && nw.App && nw.App.quit) {
                 nw.App.quit();
             } else {
                 window.close();
             }
-        }, 500);
+        }, 1500);
     </script>
 </body>
 </html>

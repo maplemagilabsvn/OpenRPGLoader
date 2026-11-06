@@ -37,7 +37,10 @@
         },
 
         parsePath(pathStr) {
-            if (!pathStr || pathStr === "" || pathStr === "/") return [];
+            if (pathStr === "" || pathStr === null || pathStr === undefined) return [];
+            if (typeof pathStr !== "string" || pathStr.charAt(0) !== "/") {
+                throw new Error(`[JSON-Patch] Đường dẫn JSON Pointer không hợp lệ: '${pathStr}' (phải bắt đầu bằng '/')`);
+            }
             return pathStr.split("/").slice(1).map(this.decodePointer);
         },
 
@@ -91,7 +94,7 @@
             const op = opObj.op;
             const pathTokens = this.parsePath(opObj.path);
 
-            // Xử lý Root Replacement (path: "" hoặc path: "/")
+            // Xử lý Root Replacement (path: "")
             if (pathTokens.length === 0) {
                 if (op === "replace" || op === "add") {
                     if (Array.isArray(doc) && Array.isArray(opObj.value)) {
@@ -325,6 +328,7 @@
             this._lastCrashFilePath = null;
             this._isBooted = false;
             this._databaseReady = false;
+            this._dataPatchesApplied = false;
 
             this.registries = {
                 items: new Map(),
@@ -878,6 +882,8 @@
 
         // --- RFC 6902 DATA PATCHING (HEADLESS-SAFE) ---
         applyDataPatches() {
+            if (this._dataPatchesApplied) return;
+            this._dataPatchesApplied = true;
             if (!fs || !path || !this.isFeatureEnabled("dataPatching") || !fs.existsSync(this.paths.modsDir)) return;
             const globalObj = this.getGlobalScope();
 
@@ -1321,42 +1327,80 @@
             this.emit("mod:discovered", { mod: modObj });
         }
 
-        // --- THUẬT TOÁN SẮP XẾP TOPO VỚI BỘ PHÁT HIỆN CHU TRÌNH LẶP ---
+        // --- THUẬT TOÁN SẮP XẾP TOPO VỚI BỘ PHÁT HIỆN CHU TRÌNH LẶP & THIẾU PHỤ THUỘC ---
         _sortModsByDependencies(modsList) {
             const sorted = [];
             const visited = new Set();
             const visiting = new Set();
+            const failed = new Set();
             const modMap = new Map();
             for (const m of modsList) modMap.set(m.id, m);
 
             const visit = (mod) => {
                 if (visited.has(mod.id)) return true;
+                if (failed.has(mod.id)) return false;
                 if (visiting.has(mod.id)) {
                     this.warn(`[DependencySort] Phát hiện chu trình lặp phụ thuộc liên quan tới mod [${mod.id}]!`);
+                    mod.status = "error";
+                    mod.error = `Phát hiện chu trình lặp phụ thuộc liên quan tới mod [${mod.id}]`;
+                    this.emit("mod:error", { mod, error: mod.error, stage: "dependency" });
+                    failed.add(mod.id);
                     return false;
                 }
                 visiting.add(mod.id);
 
-                let hasCycle = false;
+                let hasDependencyError = false;
                 if (mod.dependencies && Array.isArray(mod.dependencies)) {
                     for (const raw of mod.dependencies) {
                         const info = this.parseDependency(raw);
                         const dep = modMap.get(info.id);
-                        if (dep) {
-                            if (!visit(dep)) {
-                                hasCycle = true;
-                                break;
+
+                        // 1. Kiểm tra sự tồn tại của mod phụ thuộc
+                        if (!dep) {
+                            mod.status = "missing_dependency";
+                            mod.error = `Thiếu mod phụ thuộc: '${info.id}'${info.version ? ` (${info.op || ">="} ${info.version})` : ""}`;
+                            this.warn(`[DependencySort] Mod [${mod.id}] không thể nạp vì thiếu phụ thuộc [${info.id}].`);
+                            this.emit("mod:error", { mod, error: mod.error, stage: "dependency" });
+                            hasDependencyError = true;
+                            break;
+                        }
+
+                        // 2. Kiểm tra trạng thái của mod phụ thuộc (phải enabled và không lỗi)
+                        if (!dep.enabled || dep.status === "disabled" || dep.status === "error" || dep.status === "missing_dependency" || dep.status === "conflict") {
+                            mod.status = "missing_dependency";
+                            mod.error = `Mod phụ thuộc '${dep.id}' không khả dụng hoặc bị lỗi (status: ${dep.status})`;
+                            this.warn(`[DependencySort] Mod [${mod.id}] không thể nạp vì phụ thuộc [${dep.id}] không khả dụng.`);
+                            this.emit("mod:error", { mod, error: mod.error, stage: "dependency" });
+                            hasDependencyError = true;
+                            break;
+                        }
+
+                        // 3. Kiểm tra phiên bản tương thích (SemVer Range)
+                        if (info.version && !this.satisfiesVersion(dep.version, info.op, info.version)) {
+                            mod.status = "missing_dependency";
+                            mod.error = `Phiên bản của '${dep.id}' (v${dep.version}) không thỏa mãn yêu cầu (${info.op || ">="} ${info.version})`;
+                            this.warn(`[DependencySort] Mod [${mod.id}]: ${mod.error}`);
+                            this.emit("mod:error", { mod, error: mod.error, stage: "dependency" });
+                            hasDependencyError = true;
+                            break;
+                        }
+
+                        // 4. Đệ quy duyệt các cấp phụ thuộc sâu hơn
+                        if (!visit(dep)) {
+                            if (mod.status !== "error" && mod.status !== "missing_dependency") {
+                                mod.status = "missing_dependency";
+                                mod.error = `Phụ thuộc sâu của mod [${mod.id}] gặp sự cố tại [${dep.id}]`;
                             }
+                            hasDependencyError = true;
+                            break;
                         }
                     }
                 }
 
                 visiting.delete(mod.id);
 
-                if (hasCycle) {
-                    mod.status = "error";
-                    mod.error = `Phát hiện chu trình lặp phụ thuộc liên quan tới mod [${mod.id}]`;
-                    this.emit("mod:error", { mod, error: mod.error, stage: "dependency" });
+                if (hasDependencyError) {
+                    failed.add(mod.id);
                     return false;
                 }
 
@@ -1465,7 +1509,12 @@
             const baseDir = modObj.folderPath ? path.resolve(modObj.folderPath) : (this.paths.modsDir ? path.resolve(this.paths.modsDir) : ".");
             const engineRef = this;
 
-            return (modName) => {
+            return (rawModName) => {
+                // Chuẩn hóa tên module: bóc tách tiền tố node: (vd node:fs, node:child_process)
+                const modName = (typeof rawModName === "string" && rawModName.startsWith("node:"))
+                    ? rawModName.slice(5)
+                    : rawModName;
+
                 if (modName === "fs") {
                     if (engineRef.hasPermission(modObj, "filesystem:unrestricted")) return fs;
                     return engineRef.createSafeFs(modObj) || fs;
@@ -1476,18 +1525,23 @@
                     }
                     throw new Error(`[Permission] Mod [${modObj.id}] chưa được cấp quyền 'child_process:exec'!`);
                 }
+                if (modName === "worker_threads" || modName === "cluster" || modName === "vm") {
+                    if (!engineRef.hasPermission(modObj, "system:control")) {
+                        throw new Error(`[Permission] Mod [${modObj.id}] chưa được cấp quyền 'system:control' để truy cập module '${modName}'!`);
+                    }
+                }
                 if (modName === "path") return path;
                 if (modName === "crypto") return crypto;
 
-                if (typeof modName === "string" && (modName.startsWith("./") || modName.startsWith("../"))) {
+                if (typeof rawModName === "string" && (rawModName.startsWith("./") || rawModName.startsWith("../"))) {
                     if (path && fs) {
-                        const target = path.resolve(baseDir, modName);
+                        const target = path.resolve(baseDir, rawModName);
                         if (typeof require === "function") return require(target);
                     }
                 }
-                if (typeof window !== "undefined" && typeof window.require === "function") return window.require(modName);
-                if (typeof require === "function") return require(modName);
-                throw new Error(`Cannot find module '${modName}'`);
+                if (typeof window !== "undefined" && typeof window.require === "function") return window.require(rawModName);
+                if (typeof require === "function") return require(rawModName);
+                throw new Error(`Cannot find module '${rawModName}'`);
             };
         }
 
@@ -1503,7 +1557,7 @@
                     if (typeof custom === "boolean") return custom;
                 }
                 if (!target) return false;
-                const r = path.resolve(target);
+                const r = path.isAbsolute(target) ? path.resolve(target) : path.resolve(root, target);
                 const r1 = path.relative(root, r);
                 const r2 = path.relative(safeData, r);
                 return (!r1.startsWith("..") && !path.isAbsolute(r1)) || (!r2.startsWith("..") && !path.isAbsolute(r2));
@@ -1550,6 +1604,33 @@
                 }
             }
 
+            // Danh sách toàn diện các phương thức đọc tệp và thư mục (chống đọc trộm dữ liệu ngoài sandbox)
+            const reads = [
+                "readFileSync", "readFile",
+                "readdirSync", "readdir",
+                "readlinkSync", "readlink"
+            ];
+
+            for (const m of reads) {
+                if (typeof fs[m] === "function") {
+                    safeFs[m] = function (tp, ...args) {
+                        if (!isAllowed(tp, m)) {
+                            throw new Error(`[Safe-FS] BỊ CHẶN: Mod [${modObj.id}] không có quyền đọc ngoài thư mục mod: ${tp}`);
+                        }
+                        return fs[m].apply(fs, [tp, ...args]);
+                    };
+                }
+            }
+
+            if (typeof fs.createReadStream === "function") {
+                safeFs.createReadStream = function (tp, ...args) {
+                    if (!isAllowed(tp, "createReadStream")) {
+                        throw new Error(`[Safe-FS] BỊ CHẶN: Mod [${modObj.id}] không có quyền đọc ngoài thư mục mod: ${tp}`);
+                    }
+                    return fs.createReadStream.apply(fs, [tp, ...args]);
+                };
+            }
+
             if (typeof fs.createWriteStream === "function") {
                 safeFs.createWriteStream = function (tp, ...args) {
                     if (!isAllowed(tp, "createWriteStream")) {
@@ -1562,8 +1643,9 @@
             if (typeof fs.openSync === "function") {
                 safeFs.openSync = function (tp, flags, ...args) {
                     const effectiveFlags = (flags === undefined) ? "r" : flags;
-                    if (!isAllowed(tp, "openSync") && isWriteFlag(effectiveFlags)) {
-                        throw new Error(`[Safe-FS] BỊ CHẶN: Mod [${modObj.id}] không có quyền ghi ngoài thư mục mod: ${tp}`);
+                    const op = isWriteFlag(effectiveFlags) ? "write" : "read";
+                    if (!isAllowed(tp, op)) {
+                        throw new Error(`[Safe-FS] BỊ CHẶN: Mod [${modObj.id}] không có quyền truy cập ngoài thư mục mod: ${tp}`);
                     }
                     return fs.openSync.apply(fs, [tp, flags, ...args]);
                 };
@@ -1572,8 +1654,9 @@
             if (typeof fs.open === "function") {
                 safeFs.open = function (tp, flags, ...args) {
                     let flagArg = (flags === undefined || typeof flags === "function") ? "r" : flags;
-                    if (!isAllowed(tp, "open") && isWriteFlag(flagArg)) {
-                        throw new Error(`[Safe-FS] BỊ CHẶN: Mod [${modObj.id}] không có quyền ghi ngoài thư mục mod: ${tp}`);
+                    const op = isWriteFlag(flagArg) ? "write" : "read";
+                    if (!isAllowed(tp, op)) {
+                        throw new Error(`[Safe-FS] BỊ CHẶN: Mod [${modObj.id}] không có quyền truy cập ngoài thư mục mod: ${tp}`);
                     }
                     return fs.open.apply(fs, [tp, flags, ...args]);
                 };
@@ -1599,6 +1682,19 @@
                                 if (!isAllowed(args[0], pm)) {
                                     throw new Error(`[Safe-FS:Promises] BỊ CHẶN: Mod [${modObj.id}] không có quyền ghi tới đích: ${args[0]}`);
                                 }
+                            }
+                            return fs.promises[pm].apply(fs.promises, [tp, ...args]);
+                        };
+                    }
+                }
+                const promiseReads = [
+                    "readFile", "readdir", "readlink"
+                ];
+                for (const pm of promiseReads) {
+                    if (typeof fs.promises[pm] === "function") {
+                        safeFs.promises[pm] = async function (tp, ...args) {
+                            if (!isAllowed(tp, pm)) {
+                                throw new Error(`[Safe-FS:Promises] BỊ CHẶN: Mod [${modObj.id}] không có quyền đọc ngoài thư mục mod: ${tp}`);
                             }
                             return fs.promises[pm].apply(fs.promises, [tp, ...args]);
                         };
@@ -1670,16 +1766,38 @@
             const mDir = modObj.folderPath ? path.resolve(modObj.folderPath) : ".";
             const mFile = modObj.filePath ? path.resolve(modObj.filePath) : path.join(mDir, "index.js");
 
+            // Thiết lập Scope Sandbox an toàn: Ngăn chặn vượt rào qua window.require, globalThis.require, global.require
+            const globalObj = this.getGlobalScope();
+            const safeScope = new Proxy(globalObj, {
+                get(target, prop, receiver) {
+                    if (prop === "require") return sReq;
+                    if (prop === "process") return sProc;
+                    if (prop === "fs") return sFs;
+                    if (prop === "child_process") return sCp;
+                    if (prop === "window" || prop === "globalThis" || prop === "global") return safeScope;
+                    return Reflect.get(target, prop, receiver);
+                },
+                set(target, prop, val, receiver) {
+                    return Reflect.set(target, prop, val, receiver);
+                },
+                has(target, prop) {
+                    return Reflect.has(target, prop);
+                }
+            });
+
+            // Tạm thời hook con trỏ require toàn cục trong lúc chạy mod nhằm ngăn chặn bypass qua Function("return this")()
+            const prevGlobalRequire = globalObj.require;
             try {
+                globalObj.require = sReq;
                 const code = modObj.rawContent || (fs && fs.existsSync(mFile) ? fs.readFileSync(mFile, "utf8") : "");
                 const debugUrl = `\n//# sourceURL=mods/${modObj.id}/${path ? path.basename(mFile) : "index.js"}`;
                 const moduleObj = { exports: {} };
                 const exports = moduleObj.exports;
                 const runner = new Function(
-                    "engine", "Forge", "module", "exports", "require", "fs", "child_process", "process", "__dirname", "__filename",
+                    "engine", "Forge", "module", "exports", "require", "fs", "child_process", "process", "__dirname", "__filename", "window", "globalThis", "global",
                     code + debugUrl
                 );
-                runner(sandbox, sandbox, moduleObj, exports, sReq, sFs, sCp, sProc, mDir, mFile);
+                runner(sandbox, sandbox, moduleObj, exports, sReq, sFs, sCp, sProc, mDir, mFile, safeScope, safeScope, safeScope);
 
                 this.commitSandbox(modObj, staged);
                 modObj.status = "active";
@@ -1690,6 +1808,12 @@
                 this.error(`✖ Lỗi thực thi mod [${modObj.id}]:`, err);
                 this.rollbackSandbox(modObj.id, staged);
                 this.emit("mod:error", { mod: modObj, error: err, stage: "execution" });
+            } finally {
+                if (prevGlobalRequire !== undefined) {
+                    globalObj.require = prevGlobalRequire;
+                } else {
+                    delete globalObj.require;
+                }
             }
         }
     }

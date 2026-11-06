@@ -56,13 +56,9 @@
                 const _Scene_Boot_onDatabaseLoaded = Scene_Boot.prototype.onDatabaseLoaded;
                 Scene_Boot.prototype.onDatabaseLoaded = function () {
                     _Scene_Boot_onDatabaseLoaded.call(this);
-                    DataManager._openRpgDatabaseReady = true;
-                    engine.applyDataPatches();
-
-                    for (const cb of engine._databaseLoadedCallbacks) {
-                        try { cb(); } catch (e) { engine.error("Lỗi callback databaseLoaded:", e); }
+                    if (!engine._databaseReady) {
+                        engine.notifyDatabaseLoaded();
                     }
-                    engine._databaseLoadedCallbacks = [];
                 };
 
                 const _extractSave = DataManager.extractSaveContents;
