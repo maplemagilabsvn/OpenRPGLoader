@@ -243,7 +243,9 @@ Chúng tôi chủ trương giữ cho phần lõi luôn ổn định, tránh vi�
 <summary><b>20. OpenRPGLoader có an toàn trước mã độc (malware, virus) không?</b></summary>
 <br>
 
-**Rất an toàn!** OpenRPGLoader tích hợp hệ thống **Safe-FS Sandbox** chặn đứng các hành vi nguy hiểm như tự ý ghi đè file hệ thống ngoài thư mục game (Path Traversal) và quét tĩnh cú pháp mod. Tuy nhiên, để đảm bảo an toàn cao nhất cho máy tính, bạn luôn nên tải mod từ các tác giả và nguồn cộng đồng đáng tin cậy.
+**Khá an toàn!** OpenRPGLoader tích hợp hệ thống **Safe-FS Sandbox** chặn đứng các hành vi nguy hiểm như tự ý ghi đè file hệ thống ngoài thư mục game (Path Traversal) và quét tĩnh cú pháp mod (trong trường hợp bạn không chủ động cấp quyền truy cập nhạy cảm). 
+
+**Tuy nhiên**, bạn cần lưu ý rằng **OpenRPGLoader đơn thuần là một bộ nạp mod (Mod Loader), hoàn toàn KHÔNG PHẢI là phần mềm bảo mật hay chương trình nhận diện & diệt virus chuyên dụng**. Hệ thống **KHÔNG** có cơ chế quét và nhận diện mã độc chuyên sâu. Do đó, để bảo đảm an toàn cho máy tính, bạn luôn luôn nên tải mod từ các tác giả uy tín và nguồn cộng đồng đáng tin cậy.
 </details>
 
 <details>
