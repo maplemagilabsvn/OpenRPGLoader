@@ -799,6 +799,7 @@
                             engineRef.error(`[SafeHook] Mod [${currentHook.modId}] ném lỗi tại [${pipelineKey}]:`, err);
 
                             if (engineRef.isFeatureEnabled("circuitBreaker")) {
+                                const culprit = engineRef.getMod(currentHook.modId);
                                 let shouldTrip = false;
                                 if (typeof engineRef.policies.security === "function") {
                                     const secTrip = engineRef.policies.security("circuitBreaker", culprit, pipelineKey, { hook: currentHook, error: err, errorCount: currentHook.errorCount });
@@ -806,7 +807,6 @@
                                 } else if (engineRef.policies.circuitBreaker) {
                                     shouldTrip = Boolean(engineRef.policies.circuitBreaker(currentHook, err, currentHook.errorCount, pipelineKey));
                                 } else {
-                                    const culprit = engineRef.getMod(currentHook.modId);
                                     const maxErrors = (culprit && culprit.strictCircuitBreaker) ? 1 : (engineRef.options.circuitBreakerLimit || 2);
                                     shouldTrip = currentHook.errorCount >= maxErrors;
                                 }
