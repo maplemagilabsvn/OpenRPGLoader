@@ -5,7 +5,7 @@
 
 ---
 
-[![Phiên bản](https://img.shields.io/badge/phiên%20bản-2.1.0-blue.svg)](#)
+[![Phiên bản](https://img.shields.io/badge/phiên%20bản-1.1.1-blue.svg)](#)
 [![Tương thích](https://img.shields.io/badge/tương%20thích-RPG%20Maker%20MZ-orange.svg)](#)
 [![Trải nghiệm](https://img.shields.io/badge/trải%20nghiệm-Cắm%20là%20chạy-success.svg)](#)
 [![Giấy phép](https://img.shields.io/badge/giấy%20phép-MIT-green.svg)](#)
@@ -260,6 +260,7 @@ Chúng tôi chủ trương giữ cho phần lõi luôn ổn định, tránh vi�
 ## 📜 Giấy Phép & Miễn Trừ Trách Nhiệm
 
 * Dự án được phát hành miễn phí dưới giấy phép **[MIT License](LICENSE)**. Tự do cho cộng đồng game thủ và các nhà sáng tạo nội dung.
+* Danh sách ghi nhận và tri ân đóng góp từ cộng đồng: **[CREDITS.md](CREDITS.md)**.
 * Vui lòng đọc kỹ toàn bộ ranh giới kỹ thuật và điều khoản miễn trừ trách nhiệm pháp lý chính thức tại: **[DISCLAIMER.md](DISCLAIMER.md)**.
 * Dành cho modder và lập trình viên: Truy cập bộ tài liệu kỹ thuật chuẩn Diátaxis & Chromium tại: **[Dev Docs/README.md](Dev%20Docs/README.md)**.
 

@@ -721,10 +721,10 @@
     print("");
 
     // ========================================================================
-    // [TEST SUITE 12] DANGEROUS PERMISSION PROMPTS, STRICT SYNTAX, PRIORITY & SECURITY CUSTOMIZATION (18 Scenarios)
+    // [TEST SUITE 12] DANGEROUS PERMISSION PROMPTS, STRICT SYNTAX, PRIORITY & SECURITY CUSTOMIZATION (19 Scenarios)
     // ========================================================================
     {
-        print("📋 [TEST SUITE 12] Dangerous Permission Prompts, Strict Syntax, Priority & Security Customization (18 Scenarios)");
+        print("📋 [TEST SUITE 12] Dangerous Permission Prompts, Strict Syntax, Priority & Security Customization (19 Scenarios)");
         const secEngine = new OpenRPGEngine({
             gameRoot: "D:/DummyGame",
             security: {
@@ -891,6 +891,32 @@
             nullByteBlocked = e.message.includes("[Safe-FS] BỊ CHẶN");
         }
         assert(nullByteBlocked, "Safe-FS Hardening: Phát hiện và chặn đứng tấn công Null-Byte Poison '\\0'");
+
+        // 235: Circuit Breaker Culprit Scope Resolution under Security Policy (#1 Regression Test)
+        secEngine.mods.push({ id: "mod_culprit_tester", name: "Culprit Tester Mod" });
+        let culpritReceived = null;
+        secEngine.setSecurityPolicy((action, target, context, details) => {
+            if (action === "circuitBreaker") {
+                culpritReceived = target;
+                return true; // trip circuit breaker
+            }
+            return null;
+        });
+        class CrashingTarget { crashMethod() { return "ok"; } }
+        secEngine.hook(CrashingTarget, "crashMethod", () => {
+            throw new Error("Deliberate hook failure for circuit breaker test");
+        }, "mod_culprit_tester");
+        const crashInstance = new CrashingTarget();
+        let safeHookExecuted = false;
+        try {
+            const crashRes = crashInstance.crashMethod();
+            safeHookExecuted = (crashRes === "ok");
+        } catch (e) {
+            safeHookExecuted = false;
+        }
+        assert(safeHookExecuted && culpritReceived !== null && culpritReceived.id === "mod_culprit_tester",
+            "Circuit Breaker: Master Security Policy nhận đúng đối tượng culprit khi hook ném lỗi mà không bị ReferenceError (#1)");
+        secEngine.setSecurityPolicy(null);
     }
     print("");
 
