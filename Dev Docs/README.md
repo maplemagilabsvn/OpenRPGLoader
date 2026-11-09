@@ -1,7 +1,7 @@
 # 📚 Tài Liệu Nhà Phát Triển OpenRPGLoader (Developer Documentation)
 
 > **Kiến trúc tài liệu chuẩn quốc tế theo mô hình Chromium & Diátaxis Framework.**  
-> *Được thiết kế chuyên biệt cho hệ sinh thái RPG Maker MZ: phân tách rành mạch giữa Thực hành, Kiến trúc, Bí kíp và Tra cứu kỹ thuật.*
+> *Áp dụng chính thức cho phiên bản OpenRPGLoader v1.1.0 & v1.1.1.*
 
 ---
 

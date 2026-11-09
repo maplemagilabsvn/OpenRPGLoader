@@ -2,11 +2,15 @@
 
 OpenRPGLoader coi trọng tính an toàn của người chơi và các nhà phát triển game RPG Maker MZ. Cơ chế Safe-FS, Mock Process và Circuit Breaker được thiết kế để bảo vệ hệ thống khỏi các hành vi phá hoại hoặc lỗi vô ý.
 
-## 🛡️ Các Phiên Bản Được Hỗ Trợ
+## 🛡️ Các Phiên Bản Được Hỗ Trợ (Supported Versions)
+
+Hiện tại dự án chỉ hỗ trợ hai phiên bản `1.1.0` và `1.1.1`:
 
 | Phiên Bản | Được Hỗ Trợ |
 | :--- | :---: |
-| 1.0.x | ✅ Có |
+| 1.1.1 | ✅ Có |
+| 1.1.0 | ✅ Có |
+| 1.0.x | ❌ Không |
 | < 1.0 | ❌ Không |
 
 ## 🚨 Báo Cáo Lỗ Hổng Bảo Mật (Reporting a Vulnerability)
