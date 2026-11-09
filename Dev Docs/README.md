@@ -1,7 +1,16 @@
 # 📚 Tài Liệu Nhà Phát Triển OpenRPGLoader (Developer Documentation)
 
 > **Kiến trúc tài liệu chuẩn quốc tế theo mô hình Chromium & Diátaxis Framework.**  
-> *Áp dụng chính thức cho phiên bản OpenRPGLoader v1.1.0 & v1.1.1.*
+> *Áp dụng chính thức cho các bản phát hành **OpenRPGLoader v1.1.0 & v1.1.1**.*
+
+---
+
+## 🔖 Tra Cứu Tài Liệu Theo Phiên Bản Phát Hành (Release Tags)
+
+Dự án OpenRPGLoader phân tách tài liệu nhà phát triển tương ứng với từng phiên bản phát hành trên GitHub:
+
+* 🚀 **Phiên bản v1.1.1 & v1.1.0 (Hiện hành)**: Bạn đang xem bộ tài liệu mới nhất này (trên nhánh `main` và tag `v1.1.1`). Tài liệu đã cập nhật các cơ chế an ninh mới (Safe-FS Read/Write, Master Security Policy, Strict Syntax Enforcement, Dangerous Permission Prompts) và đánh dấu rõ các cơ chế đã lỗi thời.
+* 📦 **Phiên bản v1.0.0 (Bản phát hành đầu tiên)**: Nếu dự án game của bạn đang sử dụng phiên bản `v1.0.0`, vui lòng chuyển sang xem tài liệu chuẩn của v1.0.0 theo Git Tag tại: [**Dev Docs (Release Tag v1.0.0)**](https://github.com/maplemagilabsvn/OpenRPGLoader/tree/v1.0.0/Dev%20Docs).
 
 ---
 

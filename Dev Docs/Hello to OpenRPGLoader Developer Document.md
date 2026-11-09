@@ -3,7 +3,8 @@
 
 > [!IMPORTANT]
 > **LƯU Ý QUAN TRỌNG**:  
-> Toàn bộ hướng dẫn trong tài liệu này đều là **dạng tổng quát** (Generic Standard) nhằm mô tả cơ chế của nhân lõi mở `OpenRPGLoader`. Để đạt độ chính xác cao nhất cho từng dự án thực tế, vui lòng xem **CHI TIẾT TÀI LIỆU DÀNH CHO NHÀ PHÁT TRIỂN trên chính hệ thống Mod Loader mà bạn định tạo hoặc phát triển mod cho nó**.
+> * Bộ tài liệu này được thiết kế và cập nhật chuẩn cho các bản phát hành **v1.1.0 & v1.1.1**. Nếu bạn đang phát triển trên bản gốc **v1.0.0**, bạn có thể tra cứu bộ tài liệu tương ứng tại [**Dev Docs theo Tag v1.0.0**](https://github.com/maplemagilabsvn/OpenRPGLoader/tree/v1.0.0/Dev%20Docs).
+> * Toàn bộ hướng dẫn trong tài liệu này đều là **dạng tổng quát** (Generic Standard) nhằm mô tả cơ chế của nhân lõi mở `OpenRPGLoader`. Để đạt độ chính xác cao nhất cho từng dự án thực tế, vui lòng xem **CHI TIẾT TÀI LIỆU DÀNH CHO NHÀ PHÁT TRIỂN trên chính hệ thống Mod Loader mà bạn định tạo hoặc phát triển mod cho nó**.
 
 ---
 

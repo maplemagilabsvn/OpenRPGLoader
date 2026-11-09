@@ -4,14 +4,14 @@ OpenRPGLoader coi trọng tính an toàn của người chơi và các nhà phá
 
 ## 🛡️ Các Phiên Bản Được Hỗ Trợ (Supported Versions)
 
-Hiện tại dự án chỉ hỗ trợ hai phiên bản `1.1.0` và `1.1.1`:
+Các phiên bản chính thức của OpenRPGLoader được hỗ trợ theo từng nhánh phát hành (Releases):
 
-| Phiên Bản | Được Hỗ Trợ |
-| :--- | :---: |
-| 1.1.1 | ✅ Có |
-| 1.1.0 | ✅ Có |
-| 1.0.x | ❌ Không |
-| < 1.0 | ❌ Không |
+| Phiên Bản | Được Hỗ Trợ | Ghi Chú Tài Liệu |
+| :--- | :---: | :--- |
+| **`1.1.1`** | ✅ Có | Bản phát hành mới nhất (Sử dụng Dev Docs hiện hành) |
+| **`1.1.0`** | ✅ Có | Được hỗ trợ bảo mật (Sử dụng Dev Docs hiện hành) |
+| **`1.0.0`** | ✅ Có | Phiên bản gốc (Tra cứu qua [Dev Docs theo Tag v1.0.0](https://github.com/maplemagilabsvn/OpenRPGLoader/tree/v1.0.0/Dev%20Docs)) |
+| **`< 1.0`** | ❌ Không | Bản tiền phát hành / thử nghiệm |
 
 ## 🚨 Báo Cáo Lỗ Hổng Bảo Mật (Reporting a Vulnerability)
 
