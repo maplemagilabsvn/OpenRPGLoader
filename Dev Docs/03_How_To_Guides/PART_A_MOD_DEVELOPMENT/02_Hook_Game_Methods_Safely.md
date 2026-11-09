@@ -109,6 +109,9 @@ Forge.hook(Scene_GameEnd, "commandToTitle", function(next) {
 1. **Luôn kiểm tra sự tồn tại**: Trước khi truy cập các thuộc tính sâu, hãy dùng `&&` hoặc optional chaining `?.`.
 2. **Luôn gọi `next()` trừ khi có chủ ý**: Việc quên gọi `next()` sẽ làm đứt chuỗi thực thi của các mod khác.
 3. **Ưu tiên mức độ vừa phải**: Dùng `priority: 0` cho các can thiệp thông thường. Chỉ dùng `priority > 100` khi bạn làm các mod thư viện cốt lõi cần chạy trước.
+4. **Quy chuẩn độ ưu tiên (`priority`)**:
+   - **Chuẩn hiện đại**: Sử dụng số nguyên (`-10000` đến `10000`) hoặc các cờ hệ thống: `CRITICAL (10000)`, `HIGHEST (1000)`, `HIGH (500)`, `NORMAL (0)`, `LOW (-500)`, `LOWEST (-1000)`, `MINIMAL (-10000)`.
+   - **[ĐÃ LỖI THỜI]**: Khai báo `priority` bằng chuỗi cố định không linh hoạt (`"HIGH"`, `"NORMAL"`, `"LOW"`) đã lỗi thời và chỉ còn được giữ để tương thích ngược.
 
 ---
 

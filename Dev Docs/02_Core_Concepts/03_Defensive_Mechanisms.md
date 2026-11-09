@@ -65,10 +65,18 @@ Thực thi ghi file bình thường   NÉM LỖI: [Safe-FS] BỊ CHẶN: Path Tr
 ```
 
 ### Danh sách các phương thức được bảo vệ:
-* **Ghi/Xóa đồng bộ & bất đồng bộ**: `writeFileSync`, `writeFile`, `appendFileSync`, `appendFile`, `unlinkSync`, `unlink`, `rmSync`, `rm`, `rmdirSync`, `rmdir`, `renameSync`, `rename`, `copyFileSync`, `copyFile`.
-* **Luồng & Mở tệp**: `createWriteStream`, `openSync`, `open` (tự động phát hiện cờ ghi `"w"`, `"a"`, `"+"`, `O_WRONLY`, `O_RDWR`).
-* **Hỗ trợ `fs.promises`**: Bọc toàn bộ các API Promise (`fs.promises.writeFile`, `mkdir`...) thông qua `Object.defineProperty`.
-* **Khả năng cắm chốt tùy biến (Pluggable Policy)**: Studio game có thể dùng `engine.setPolicy("fs", (modObj, targetPath, op) => ...)` để cấp thêm quyền ghi vào thư mục cụ thể (ví dụ `save/` hoặc `custom_data/`).
+* **Đọc tệp tin (Read Interception - Chuẩn hiện đại v1.1.0+)**: `readFileSync`, `readFile`, `createReadStream`, `readdirSync`, `readdir`, `readlinkSync`, `readlink`.  
+  *(> [!WARNING]  
+  * **[ĐÃ LỖI THỜI]**: Cơ chế chỉ chặn ghi (Write-Only Interception) ở phiên bản v1.0.0 đã bị loại bỏ vì để lọt việc mod đọc trộm mã nguồn, token hoặc file save của người chơi)*.
+* **Ghi/Xóa đồng bộ & bất đồng bộ**: `writeFileSync`, `writeFile`, `appendFileSync`, `appendFile`, `unlinkSync`, `unlink`, `rmSync`, `rm`, `rmdirSync`, `rmdir`, `renameSync`, `rename`, `copyFileSync`, `copyFile`, `mkdirSync`, `mkdir`, `truncateSync`, `truncate`.
+* **Luồng & Mở tệp**: `createWriteStream`, `openSync`, `open` (tự động phát hiện cờ ghi `"w"`, `"a"`, `"+"`, `O_WRONLY`, `O_RDWR` và cờ đọc).
+* **Hỗ trợ `fs.promises`**: Bọc toàn bộ các API Promise (`fs.promises.readFile`, `fs.promises.writeFile`, `mkdir`...) thông qua `Object.defineProperty`.
+* **Chống tấn công Null-Byte Poison**: Tự động phát hiện và chặn đứng các chuỗi đường dẫn độc hại chứa ký tự null `\0` (ví dụ `file.txt\0/etc/passwd`).
+* **Khóa cổng vượt rào Node.js & Global Scope**:
+  - Chặn triệt để tiền tố `node:` (`require("node:child_process")`, `require("node:fs")`).
+  - Vô hiệu hóa con trỏ toàn cục `window.require`, `globalThis.require` và `global.require` trong ngữ cảnh mod.
+  - Khóa vĩnh viễn `process.dlopen` và `process.binding` để chống nạp thư viện C++ ngoài luồng.
+* **Khả năng cắm chốt tùy biến (Security Policy)**: Studio game có thể dùng `engine.setSecurityPolicy(...)` hoặc `engine.setPolicy("fs", ...)` để nới lỏng quyền đọc/ghi vào thư mục cụ thể (ví dụ `save/` hoặc `custom_data/`).
 
 ---
 
@@ -94,6 +102,25 @@ OpenRPGLoader hook vào phương thức `DataManager.extractSaveContents` và k�
    * Lọc bỏ những nhân vật thuộc về mod đã bị gỡ.
    * **Cơ chế Fallback cứu nguy**: Nếu toàn bộ đội hình đều là nhân vật của mod bị xóa, hệ thống sẽ tự động khôi phục nhân vật mặc định đầu tiên từ `$dataSystem.partyMembers[0]`, giúp người chơi không bị rơi vào trạng thái "đội hình rỗng" gây treo game.
 3. **Phát sự kiện minh bạch**: Phát tín hiệu `save:sanitized` và ghi log thống kê số lượng định danh đã được giải cứu an toàn.
+
+---
+
+## 4. Hộp Thoại Hỏi Quyền Nguy Hiểm (Dangerous Permission Prompts)
+
+### Bài toán thực tế:
+Nếu một bản mod chứa mã độc hoặc rủi ro cao nhưng người chơi không hề hay biết rằng nó có quyền xóa ổ đĩa hoặc chạy file `.exe` ngoài hệ thống, việc cấp quyền tự động sẽ đẩy máy tính người chơi vào tình thế nguy hiểm.
+
+### Cơ chế hoạt động:
+* **[ĐÃ LỖI THỜI]**: Cơ chế tự động cấp toàn bộ quyền khai báo trong `mod.json` mà không cảnh báo người chơi (Silent Authorization).
+* **Chuẩn hiện đại (v1.1.0+)**:
+  1. Khi mod yêu cầu một trong các quyền thuộc danh sách rủi ro cao:
+     * `child_process:exec`
+     * `filesystem:unrestricted`
+     * `system:control`
+     * Wildcard `*`
+  2. Engine sẽ chặn luồng thực thi và kích hoạt hộp thoại tương tác người dùng (`window.confirm` trên giao diện hoặc hook chính sách `policies.permissionPrompt`).
+  3. Nếu người dùng chọn **"Từ chối" (Cancel)**: Quyền sẽ bị thu hồi vĩnh viễn trong phiên chạy đó, bảo đảm an toàn cho thiết bị.
+  4. Nếu người dùng chọn **"Đồng ý" (OK)**: Quyền được cấp và lưu vào bộ nhớ cache phiên.
 
 ---
 

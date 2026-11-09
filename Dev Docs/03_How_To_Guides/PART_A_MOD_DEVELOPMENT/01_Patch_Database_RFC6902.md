@@ -139,5 +139,19 @@ Phép toán `test` giúp đảm bảo bạn chỉ sửa dữ liệu nếu phiên
 
 ---
 
+## 5. Quy Chuẩn JSON Pointer RFC 6901 & Các Hành Vi Đã Lỗi Thời
+
+> [!WARNING]
+> **Điểm mấu chốt về Root Pointer theo chuẩn RFC 6901**:  
+> * **Chuẩn hiện đại (RFC 6901 / RFC 6902)**: Chuỗi rỗng `""` là con trỏ duy nhất đại diện cho toàn bộ **Root Document**.
+> * **[ĐÃ LỖI THỜI]**: Việc sử dụng đường dẫn `"path": "/"` để trỏ tới Root Document là **sai quy chuẩn quốc tế** và đã bị loại bỏ. Theo RFC 6901, đường dẫn `"/"` thực chất trỏ tới thuộc tính có tên là chuỗi rỗng `""` nằm bên trong Root Object (ví dụ `{ "": "giá trị" }` - một cú pháp JSON hoàn toàn hợp lệ). Hãy luôn sử dụng chuỗi rỗng `""` khi muốn thao tác trên toàn bộ Root!
+
+> [!IMPORTANT]
+> **Các chốt chặn bảo mật tích hợp trong JSON-Patch**:  
+> 1. **Chống Prototype Pollution**: OpenRPGLoader tự động phát hiện và ném ngoại lệ nếu bất kỳ phép vá nào chứa các token nhạy cảm: `__proto__`, `constructor`, `prototype`.  
+> 2. **Chống nhân đôi dữ liệu (Double-Patching Guard)**: Hệ thống sử dụng cờ nguyên tử `_dataPatchesApplied` để đảm bảo các phép vá chèn cuối mảng (`path: "/-"`) không bao giờ bị nhân đôi số lượng vật phẩm hoặc kỹ năng khi cơ sở dữ liệu được nạp lại.
+
+---
+
 👉 Xem tiếp:  
 [**A2. Hook An Toàn Vào Lớp Logic Game**](02_Hook_Game_Methods_Safely.md)

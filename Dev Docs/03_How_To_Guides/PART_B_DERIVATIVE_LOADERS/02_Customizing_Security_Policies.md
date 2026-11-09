@@ -4,29 +4,53 @@
 
 ---
 
-## 1. Cơ Chế Pluggable Policy Là Gì?
+## 1. Cơ Chế Master Security Policy & Pluggable Policy
 
-Thay vì ép buộc một bộ quy tắc bảo mật cứng nhắc, OpenRPGEngine cung cấp phương thức `this.setPolicy(type, policyFunction)`.
+Thay vì ép buộc một bộ quy tắc bảo mật cứng nhắc, OpenRPGEngine cung cấp hai cơ chế tùy biến an ninh:
 
-Khi một hành động nhạy cảm diễn ra:
-1. Hệ thống sẽ gọi hàm `policyFunction` của bạn trước.
-2. Nếu hàm trả về `true` -> Cho phép thực hiện.
-3. Nếu hàm trả về `false` -> Chặn đứng hành động và ném lỗi an toàn.
-4. Nếu hàm trả về `null` hoặc `undefined` -> Nhường quyền quyết định lại cho bộ xử lý mặc định của OpenRPG.
+### A. Chuẩn hiện đại (v1.1.0+): `this.setSecurityPolicy(fn)` ⭐ *(Khuyến nghị)*
+Một chốt chặn trung tâm duy nhất kiểm soát toàn diện mọi hành vi bảo mật trên hệ thống (`action`: `"permission"`, `"fs"`, `"circuitBreaker"`, `"prompt"`).
 
----
+```javascript
+this.setSecurityPolicy((action, target, context, details) => {
+    // 1. Kiểm soát quyền hệ thống
+    if (action === "permission") {
+        const mod = target;
+        const perm = context;
+        if (mod.id === "untrusted_mod") return false; // Chặn mod
+    }
 
-## 2. Các Loại Policy Hỗ Trợ
+    // 2. Kiểm soát Safe-FS (Đọc / Ghi)
+    if (action === "fs") {
+        const filePath = context;
+        if (filePath.endsWith(".secret")) return false; // Chặn đọc file bí mật
+    }
 
-Hệ thống hỗ trợ 4 loại Policy:
+    // 3. Kiểm soát Circuit Breaker
+    if (action === "circuitBreaker") {
+        const culprit = target;
+        const pipelineKey = context;
+        // Trả về true nếu muốn ngắt mạch ngay lập tức
+    }
+
+    return null; // Nhường quyền quyết định lại cho bộ xử lý mặc định
+});
+```
+
+### B. [ĐÃ LỖI THỜI / LEGACY]: `this.setPolicy(type, fn)` ⚠️ *(Vẫn hỗ trợ để tương thích ngược)*
+Cơ chế đăng ký chính sách rời rạc theo từng loại chốt chặn:
 * `"fs"`: Kiểm soát quyền đọc/ghi tệp tin của mod.
 * `"permission"`: Kiểm soát việc cấp quyền đặc quyền cho mod.
+* `"permissionPrompt"`: Tùy biến hộp thoại hỏi người dùng khi mod đòi quyền nguy hiểm.
 * `"audit"`: Can thiệp hoặc thay đổi kết quả chấm điểm kiểm định mã độc tĩnh.
 * `"circuitBreaker"`: Tùy biến điều kiện đánh sập cầu dao ngắt hook lỗi.
 
+> [!NOTE]
+> Cách gọi `setPolicy` đơn lẻ này vẫn hoạt động trơn tru trong các bản phân phối cũ, nhưng được gắn nhãn **`[ĐÃ LỖI THỜI]`**. Các bản mod loader mới nên chuyển đổi sang `setSecurityPolicy` để có kiến trúc an ninh tập trung và dễ bảo trì hơn.
+
 ---
 
-## 3. Các Ví Dụ Triển Khai Thực Tế
+## 2. Các Ví Dụ Triển Khai Thực Tế
 
 ### Ví dụ 1: Tùy Biến Chính Sách Hệ Thống Tệp (`fs policy`)
 

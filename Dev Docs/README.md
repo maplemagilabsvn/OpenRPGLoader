@@ -108,6 +108,23 @@ Tài liệu được chia thành **2 PHẦN LỚN** phục vụ 2 đối tượn
 
 ---
 
+## ⚠️ Bảng Tổng Hợp Các Cơ Chế & Tính Năng Đã Lỗi Thời (Deprecation Matrix)
+
+Nhằm nâng cao mức độ an toàn và tuân thủ chặt chẽ các tiêu chuẩn kỹ thuật quốc tế (RFC 6901 / RFC 6902, Chromium Staged Sandbox), phiên bản **OpenRPGLoader v1.1.x** đã đánh dấu lỗi thời và thay thế các cơ chế cũ sau:
+
+| Cơ Chế / Cú Pháp Cũ | Trạng Thái | Chuẩn Hiện Đại Thay Thế (v1.1.x) | Lý Do & Phạm Vi Kỹ Thuật |
+| :--- | :---: | :--- | :--- |
+| **Đường dẫn Root `"path": "/"`** | ❌ **[ĐÃ LỖI THỜI]** | Sử dụng chuỗi rỗng `"path": ""` | Chuẩn hóa RFC 6901: đường dẫn `"/"` thực chất trỏ tới key rỗng `{ "": ... }`, không phải Root Document. |
+| **Tha thứ lỗi cú pháp (Lenient Parsing / Auto-fix)** | ❌ **[ĐÃ LỖI THỜI]** | **Strict Syntax Enforcement** | Loại bỏ tính năng tự sửa lỗi cú pháp. Bất kỳ lỗi JSON hoặc JS nào dù nhỏ nhất đều khiến mod bị cách ly ngay lập tức. |
+| **Safe-FS chỉ chặn thao tác ghi (Write-Only)** | ❌ **[ĐÃ LỖI THỜI]** | **Bảo vệ toàn diện cả Đọc & Ghi (Read & Write)** | Ngăn chặn mod đọc trộm mã nguồn, token hoặc file save của người chơi ngoài thư mục mod. |
+| **Cấp quyền nguy hiểm tự động (Silent Permissions)** | ❌ **[ĐÃ LỖI THỜI]** | **Dangerous Permission Prompts** | Bắt buộc bật hộp thoại hỏi ý kiến người chơi trước khi cấp quyền `child_process:exec`, `filesystem:unrestricted`, `system:control`. |
+| **Đăng ký chính sách lẻ tẻ (`setPolicy`)** | ⚠️ **[ĐÃ LỖI THỜI]** | **`setSecurityPolicy(fn)` (Master Policy)** | Tập trung toàn bộ logic an ninh tại một hàm chốt chặn duy nhất thay vì phân tán nhiều hàm rời rạc. *(Vẫn hỗ trợ để tương thích ngược)*. |
+| **Độ ưu tiên 3 chuỗi cố định (`HIGH/NORMAL/LOW`)** | ⚠️ **[ĐÃ LỖI THỜI]** | **Hệ thống số nguyên & Cờ mở rộng (`setPriorityFlags`)** | Hỗ trợ dải số nguyên (`-10000` đến `10000`), giải mã linh hoạt qua `resolvePriority` và comparator tùy biến. |
+| **Vượt rào Sandbox qua `node:` hoặc `window.require`** | ❌ **[ĐÃ BỊ CHẶN]** | Môi trường Sandbox chuẩn hóa | Khóa triệt để các tiền tố `node:child_process`, `node:fs` và vô hiệu hóa con trỏ `window.require` / `globalThis.require`. |
+| **Tự quản lý biến cờ 1 lần trong Event Bus** | ⚠️ **[ĐÃ LỖI THỜI]** | **`engine.once()` & `engine.off()`** | Tích hợp sẵn API quản lý vòng đời sự kiện chuẩn tắc thay vì phải viết logic cờ thủ công. |
+
+---
+
 <p align="center">
   <b>M.A.P.L.E MAGI Labs</b> • <i>OpenRPGLoader Technical Documentation Suite</i>
 </p>

@@ -48,12 +48,24 @@ Chủ động đưa một bản mod vào diện cách ly an toàn, tháo gỡ to
 
 ## 3. Quản Lý Chính Sách & Tính Năng (Policies & Toggles)
 
-### `setPolicy(type: string, fn: Function): void`
-Đăng ký chính sách bảo mật tùy biến cho bản phái sinh.
-* **`type`**: `"fs"` | `"permission"` | `"audit"` | `"circuitBreaker"`
+### `setSecurityPolicy(fn: Function): void` ⭐ *(Khuyến nghị - Chuẩn hiện đại v1.1.0+)*
+Thiết lập một **Chính Sách Bảo Mật Trung Tâm (Master Security Policy)** duy nhất nhằm kiểm soát và ghi đè toàn quyền mọi quyết định an ninh trên toàn hệ thống.
+* **Chữ ký hàm `fn`**: `(action: string, target: any, context?: any, details?: any) => boolean | null`
+  * `action === "permission"`: Quyết định cấp hay từ chối quyền của mod (`target` là đối tượng mod, `context` là tên quyền hạn).
+  * `action === "fs"`: Quyết định quyền truy cập hệ thống tệp tin (`target` là đối tượng mod, `context` là đường dẫn tệp tin, `details.op` là loại thao tác đọc/ghi).
+  * `action === "circuitBreaker"`: Quyết định ngắt hook mod khi có ngoại lệ (`target` là đối tượng mod vi phạm, `context` là pipelineKey, `details` chứa đối tượng hook và số lỗi).
+  * `action === "prompt"`: Xử lý hỏi người dùng khi mod đòi quyền nguy hiểm.
+  * *Trả về*: `true` (Cho phép/Ngắt), `false` (Chặn/Không ngắt), `null/undefined` (Chuyển quyền cho bộ xử lý mặc định).
+
+### `setPolicy(type: string, fn: Function): void` ⚠️ *[ĐÃ LỖI THỜI / LEGACY - Vẫn hỗ trợ để tương thích ngược]*
+Đăng ký chính sách bảo mật lẻ tẻ theo từng loại chốt chặn riêng biệt.
+> [!NOTE]
+> Cách đăng ký từng policy riêng rẽ này **đã lỗi thời**. Các dự án mới được khuyến nghị chuyển sang sử dụng `setSecurityPolicy(fn)` để tập trung toàn bộ logic an ninh tại một đầu mối duy nhất.
+* **`type`**: `"fs"` | `"permission"` | `"audit"` | `"circuitBreaker"` | `"permissionPrompt"`
 * **Chữ ký hàm `fn`**:
   * `"fs"`: `(modObj, targetPath, op) => boolean | null`
   * `"permission"`: `(modObj, permission) => boolean | null`
+  * `"permissionPrompt"`: `(modObj, permission) => boolean` *(Bật hộp thoại hỏi người dùng khi mod đòi quyền nguy hiểm)*
   * `"audit"`: `(modObj, report) => report`
   * `"circuitBreaker"`: `(hook, error, errorCount, key) => boolean | null`
 
@@ -68,7 +80,32 @@ Kiểm tra xem một cờ tính năng có đang được kích hoạt hay không
 
 ---
 
-## 4. Đường Ống Dẫn Hook An Toàn (Safe Hook Pipeline)
+## 4. Hệ Thống Độ Ưu Tiên (Priority Management)
+
+### `setPriorityFlags(flags: Record<string, number>): void`
+Đăng ký hoặc mở rộng bảng ánh xạ cờ hiệu ưu tiên tùy biến cho tựa game.
+* Mặc định hỗ trợ:
+  * `CRITICAL`: `10000`
+  * `HIGHEST`: `1000`
+  * `HIGH`: `500`
+  * `NORMAL`: `0`
+  * `LOW`: `-500`
+  * `LOWEST`: `-1000`
+  * `MINIMAL`: `-10000`
+
+### `resolvePriority(priorityVal: any): number`
+Chuyển đổi một giá trị ưu tiên (số nguyên, chuỗi định danh cờ, hoặc object mang thuộc tính `priority`) thành một số nguyên chính xác.
+
+### `setPriorityComparator(fn: (a: any, b: any, context?: string) => number): void`
+Cho phép nhà phát triển viết lại hoàn toàn thuật toán so sánh độ ưu tiên giữa hai đối tượng mod hoặc hook.
+* **[ĐÃ LỖI THỜI]**: Thuật toán so sánh cũ dựa trên chuỗi cứng `"HIGH"`, `"NORMAL"`, `"LOW"` không còn được khuyến nghị. Hãy sử dụng hàm so sánh số nguyên hoặc comparator tùy biến.
+
+### `comparePriorities(a: any, b: any, context?: string): number`
+Thực hiện so sánh độ ưu tiên giữa hai đối tượng `a` và `b` theo comparator đã đăng ký.
+
+---
+
+## 5. Đường Ống Dẫn Hook An Toàn (Safe Hook Pipeline)
 
 ### `hook(targetClass: Function, methodName: string, hookFn: Function, modId?: string, priority?: number): void`
 Đăng ký một hàm can thiệp an toàn vào một lớp JavaScript.
@@ -158,10 +195,21 @@ Lấy danh sách các thông điệp được các mod khác gửi đến cho b�
 
 ---
 
-## 10. Phòng Vệ & Dữ Liệu Lưu (Security & Save Shield)
+## 11. Phòng Vệ, Phân Quyền & Dữ Liệu Lưu (Security, Permissions & Save Shield)
 
 ### `createSafeFs(modObj: ModObject): SafeFsWrapper`
-Khởi tạo đối tượng giả lập `fs` (dựa trên `Object.create(fs)`) được trang bị kiểm tra Path Traversal và ủy quyền qua `fs policy`.
+Khởi tạo đối tượng giả lập `fs` (dựa trên `Object.create(fs)`) được trang bị kiểm tra Path Traversal, Null-Byte Poison và ủy quyền qua Security Policy.
+* **Chuẩn hiện đại (v1.1.0+)**: Bọc và kiểm soát toàn diện cả **THAO TÁC ĐỌC** (`readFileSync`, `readFile`, `createReadStream`, `readdir`, `readlink`, `open`, `openSync`) lẫn **THAO TÁC GHI/XÓA** (`writeFileSync`, `writeFile`, `mkdir`, `unlink`, `rm`, `copyFile`...). Mod bị chặn đọc trộm bất kỳ file nào ngoài thư mục sandbox của nó trừ khi được cấp quyền `filesystem:unrestricted`.
+* **[ĐÃ LỖI THỜI]**: Cơ chế cũ (v1.0.0) chỉ chặn thao tác ghi (Write-Only Interception) và để lọt thao tác đọc đã bị bãi bỏ do tiềm ẩn rủi ro lộ mã nguồn và file save.
+
+### `grantPermission(modId: string, permission: string): void`
+Cấp phát động một quyền hạn cho một bản mod tại runtime và ghi nhận vào cache quyền hạn.
+
+### `revokePermission(modId: string, permission: string): void`
+Thu hồi một quyền hạn đã cấp cho bản mod tại runtime.
+
+### `hasPermission(modObj: ModObject, permission: string): boolean`
+Kiểm tra xem bản mod có quyền được chỉ định hay không (tự động kích hoạt Dangerous Permission Prompt nếu gặp quyền nguy hiểm và chưa có chính sách cho phép trước đó).
 
 ### `auditMod(modObj: ModObject): AuditReport`
 Thực thi phân tích tĩnh mã nguồn của mod qua 9 lớp tiêu chuẩn và trả về báo cáo điểm số (`score`: 0–100, `grade`: S/A/B/C/F, `passed`: boolean).
@@ -171,9 +219,18 @@ Thực thi phân tích tĩnh mã nguồn của mod qua 9 lớp tiêu chuẩn và
 
 ---
 
-## 11. Sự Kiện Toàn Cục (Event Bus)
+## 12. Sự Kiện Toàn Cục (Event Bus)
 
-`OpenRPGEngine` kế thừa EventEmitter tiêu chuẩn:
+`OpenRPGEngine` tích hợp Event Bus mạnh mẽ với thứ tự ưu tiên:
+
+### Các phương thức:
+* **`on(event: string, callback: Function, priority: number = 0): void`**: Đăng ký lắng nghe sự kiện kèm độ ưu tiên.
+* **`once(event: string, callback: Function, priority: number = 0): void`**: Đăng ký lắng nghe sự kiện và tự động hủy sau lần kích hoạt đầu tiên.  
+  *(**[ĐÃ LỖI THỜI]**: Kỹ thuật tự tạo biến cờ `let executed = false` bên trong `engine.on(...)` để chạy một lần đã lỗi thời và không còn cần thiết)*.
+* **`off(event: string, callback: Function): void`**: Hủy đăng ký callback đã gắn vào sự kiện.
+* **`emit(event: string, ...args: any[]): void`**: Kích hoạt sự kiện và gọi toàn bộ callback theo thứ tự ưu tiên giảm dần.
+
+### Bảng sự kiện hệ thống:
 
 | Tên sự kiện | Dữ liệu trả về | Thời điểm phát |
 | :--- | :--- | :--- |

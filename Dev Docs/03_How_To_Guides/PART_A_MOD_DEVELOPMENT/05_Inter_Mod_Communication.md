@@ -99,7 +99,17 @@ Forge.emit("custom:chestOpened", { chestId: 102, reward: "Bình Siêu Máu" });
 Forge.on("custom:chestOpened", (data) => {
     Forge.showInGameToast(`Mod B ghi nhận: Hòm #${data.chestId} vừa mở!`, "info");
 });
+
+// Mod C (Chỉ cần lắng nghe đúng 1 lần duy nhất):
+Forge.once("custom:chestOpened", (data) => {
+    Forge.log("Lần đầu mở hòm báu trong phiên chơi!");
+});
 ```
+
+> [!TIP]
+> **Quản lý sự kiện 1 lần**:  
+> * **Chuẩn hiện đại**: Sử dụng `Forge.once(event, callback, priority)` và `Forge.off(event, callback)` để quản lý vòng đời sự kiện chính xác.
+> * **[ĐÃ LỖI THỜI]**: Thủ thuật tự tạo biến cờ `let isTriggered = false` bên trong hàm `Forge.on(...)` để chỉ chạy một lần hiện đã lỗi thời và không còn cần thiết.
 
 ---
 
