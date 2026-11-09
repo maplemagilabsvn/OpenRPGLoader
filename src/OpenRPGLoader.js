@@ -1426,7 +1426,13 @@
                 enabled: true
             });
 
-            if (!fs || !fs.existsSync(this.paths.modsDir)) return;
+            if (!fs) return;
+            if (!fs.existsSync(this.paths.modsDir)) {
+                try {
+                    fs.mkdirSync(this.paths.modsDir, { recursive: true });
+                } catch (e) {}
+            }
+            if (!fs.existsSync(this.paths.modsDir)) return;
 
             const entries = fs.readdirSync(this.paths.modsDir, { withFileTypes: true });
             for (const e of entries) {
