@@ -396,6 +396,7 @@
             this._isBooted = false;
             this._databaseReady = false;
             this._dataPatchesApplied = false;
+            this._cleanVirtualAssets = new Set();
 
             this.registries = {
                 items: new Map(),
@@ -978,7 +979,7 @@
             return false;
         }
 
-        // --- VIRTUAL ASSETS RESOLVER ---
+        // --- VIRTUAL ASSETS RESOLVER & ENCRYPTION COMPATIBILITY ---
         resolveAsset(relativeUrl) {
             if (!fs || !path || !this.isFeatureEnabled("virtualAssets") || !relativeUrl) return null;
             let decodedUrl = relativeUrl;
@@ -987,26 +988,174 @@
             } catch (e) {
                 decodedUrl = relativeUrl;
             }
-            const norm = decodedUrl.replace(/\\/g, "/");
+            const norm = decodedUrl.replace(/\\/g, "/").replace(/^\.?\//, "");
+
+            const encryptedExtMap = {
+                ".png_": ".png",
+                ".rpgmvp": ".png",
+                ".ogg_": ".ogg",
+                ".rpgmvo": ".ogg",
+                ".rpgmvm": ".m4a"
+            };
+
+            const cleanExtMap = {
+                ".png": [".png_", ".rpgmvp"],
+                ".ogg": [".ogg_", ".rpgmvo"],
+                ".m4a": [".rpgmvm"]
+            };
+
+            const extMatch = norm.match(/\.[a-zA-Z0-9_]+$/);
+            const ext = extMatch ? extMatch[0].toLowerCase() : "";
+            const targetPaths = [norm];
+
+            if (encryptedExtMap[ext]) {
+                const cleanExt = encryptedExtMap[ext];
+                const cleanNorm = norm.slice(0, -ext.length) + cleanExt;
+                targetPaths.unshift(cleanNorm); // Prioritize clean asset from mod
+            } else if (cleanExtMap[ext]) {
+                for (const encExt of cleanExtMap[ext]) {
+                    targetPaths.push(norm.slice(0, -ext.length) + encExt);
+                }
+            }
 
             for (let i = this.mods.length - 1; i >= 0; i--) {
                 const mod = this.mods[i];
                 if (mod.status === "active" && mod.isFolder && mod.folderPath) {
-                    const candidates = [
-                        path.join(mod.folderPath, norm),
-                        path.join(mod.folderPath, "assets", norm),
-                        path.join(mod.folderPath, norm.replace(/^assets\//i, "")),
-                        path.join(mod.folderPath, norm.replace(/^img\//i, "")),
-                        path.join(mod.folderPath, norm.replace(/^audio\//i, "")),
-                        path.join(mod.folderPath, "assets", norm.replace(/^img\//i, "")),
-                        path.join(mod.folderPath, "assets", norm.replace(/^audio\//i, ""))
-                    ];
-                    for (const c of candidates) {
-                        if (fs.existsSync(c)) return c.replace(/\\/g, "/");
+                    for (const targetPath of targetPaths) {
+                        const candidates = [
+                            path.join(mod.folderPath, targetPath),
+                            path.join(mod.folderPath, "assets", targetPath),
+                            path.join(mod.folderPath, targetPath.replace(/^assets\//i, "")),
+                            path.join(mod.folderPath, targetPath.replace(/^img\//i, "")),
+                            path.join(mod.folderPath, targetPath.replace(/^audio\//i, "")),
+                            path.join(mod.folderPath, "assets", targetPath.replace(/^img\//i, "")),
+                            path.join(mod.folderPath, "assets", targetPath.replace(/^audio\//i, ""))
+                        ];
+                        for (const c of candidates) {
+                            if (fs.existsSync(c)) {
+                                const resolved = c.replace(/\\/g, "/");
+                                if (!this.isEncryptedAsset(resolved)) {
+                                    if (!this._cleanVirtualAssets) this._cleanVirtualAssets = new Set();
+                                    this._cleanVirtualAssets.add(resolved);
+                                    this._cleanVirtualAssets.add(norm);
+                                    this._cleanVirtualAssets.add(relativeUrl);
+                                    if (targetPath !== norm) {
+                                        this._cleanVirtualAssets.add(targetPath);
+                                    }
+                                }
+                                return resolved;
+                            }
+                        }
                     }
                 }
             }
             return null;
+        }
+
+        // --- ENCRYPTED ASSETS & DECRYPTION HELPERS ---
+        isCleanVirtualAsset(urlOrPath) {
+            if (!urlOrPath) return false;
+            const cleanUrl = String(urlOrPath).replace(/\\/g, "/");
+            if (this._cleanVirtualAssets && (this._cleanVirtualAssets.has(cleanUrl) || this._cleanVirtualAssets.has(urlOrPath))) {
+                return true;
+            }
+            if (cleanUrl.includes("mods/") || cleanUrl.startsWith("mods/")) {
+                const lower = cleanUrl.toLowerCase();
+                if (
+                    lower.endsWith(".png") ||
+                    lower.endsWith(".jpg") ||
+                    lower.endsWith(".jpeg") ||
+                    lower.endsWith(".ogg") ||
+                    lower.endsWith(".m4a") ||
+                    lower.endsWith(".wav") ||
+                    lower.endsWith(".webp") ||
+                    lower.endsWith(".json")
+                ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        isEncryptedAsset(urlOrPath) {
+            if (!urlOrPath) return false;
+            const lower = String(urlOrPath).toLowerCase();
+            return lower.endsWith(".png_") ||
+                   lower.endsWith(".rpgmvp") ||
+                   lower.endsWith(".ogg_") ||
+                   lower.endsWith(".rpgmvo") ||
+                   lower.endsWith(".rpgmvm");
+        }
+
+        cleanAssetExtension(urlOrPath) {
+            if (!urlOrPath) return urlOrPath;
+            const lower = String(urlOrPath).toLowerCase();
+            if (lower.endsWith(".png_")) return urlOrPath.slice(0, -".png_".length) + ".png";
+            if (lower.endsWith(".rpgmvp")) return urlOrPath.slice(0, -".rpgmvp".length) + ".png";
+            if (lower.endsWith(".ogg_")) return urlOrPath.slice(0, -".ogg_".length) + ".ogg";
+            if (lower.endsWith(".rpgmvo")) return urlOrPath.slice(0, -".rpgmvo".length) + ".ogg";
+            if (lower.endsWith(".rpgmvm")) return urlOrPath.slice(0, -".rpgmvm".length) + ".m4a";
+            return urlOrPath;
+        }
+
+        isCleanMediaBuffer(source) {
+            if (!source || source.byteLength < 4) return false;
+            const u8 = new Uint8Array(source, 0, Math.min(source.byteLength, 16));
+            // 1. PNG: 0x89 0x50 0x4E 0x47 (\x89PNG)
+            if (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e && u8[3] === 0x47) return true;
+            // 2. Ogg: 0x4F 0x67 0x67 0x53 (OggS)
+            if (u8[0] === 0x4f && u8[1] === 0x67 && u8[2] === 0x67 && u8[3] === 0x53) return true;
+            // 3. JPEG: 0xFF 0xD8 0xFF
+            if (u8[0] === 0xff && u8[1] === 0xd8 && u8[2] === 0xff) return true;
+            // 4. M4A / MP4: 'ftyp' at offset 4
+            if (u8.length >= 8 && u8[4] === 0x66 && u8[5] === 0x74 && u8[6] === 0x79 && u8[7] === 0x70) return true;
+            // 5. RIFF (WAV or WebP): 0x52 0x49 0x46 0x46
+            if (u8[0] === 0x52 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x46) return true;
+            return false;
+        }
+
+        isEncryptedBuffer(source) {
+            if (!source || source.byteLength < 16) return false;
+            const u8 = new Uint8Array(source, 0, 16);
+            const headerHex = Array.from(u8, x => x.toString(16)).join(",");
+            return headerHex === "52,50,47,4d,56,0,0,0,0,3,1,0,0,0,0,0";
+        }
+
+        getEncryptionKey() {
+            const globalObj = this.getGlobalScope();
+            if (globalObj.Utils && globalObj.Utils._encryptionKey) return globalObj.Utils._encryptionKey;
+            if (globalObj.Decrypter && globalObj.Decrypter._encryptionKey) return globalObj.Decrypter._encryptionKey;
+            if (globalObj.$dataSystem && globalObj.$dataSystem.encryptionKey) return globalObj.$dataSystem.encryptionKey;
+            if (fs && path && this.paths && this.paths.gameRoot) {
+                const sysFile = path.join(this.paths.gameRoot, "data", "System.json");
+                if (fs.existsSync(sysFile)) {
+                    try {
+                        const content = JSON.parse(fs.readFileSync(sysFile, "utf8"));
+                        if (content && content.encryptionKey) return content.encryptionKey;
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+            }
+            return null;
+        }
+
+        decryptArrayBuffer(source, keyOverride) {
+            if (!source) return source;
+            // Bypass decryption if buffer is clean media or not RPGMV encrypted
+            if (this.isCleanMediaBuffer(source) || !this.isEncryptedBuffer(source)) {
+                return source;
+            }
+            const key = keyOverride || this.getEncryptionKey();
+            if (!key) return source;
+            const body = source.slice(16);
+            const view = new DataView(body);
+            const keyBytes = key.match(/.{2}/g);
+            if (!keyBytes || keyBytes.length < 16) return body;
+            for (let i = 0; i < 16; i++) {
+                view.setUint8(i, view.getUint8(i) ^ parseInt(keyBytes[i], 16));
+            }
+            return body;
         }
 
         // --- RFC 6902 DATA PATCHING (HEADLESS-SAFE) ---
@@ -2914,6 +3063,117 @@ ${errStack}
             const mapId = (typeof $gameMap !== "undefined" && $gameMap && typeof $gameMap.mapId === "function") ? $gameMap.mapId() : 0;
             const loader = getLoader();
             loader.emit("mapLoaded", mapId);
+        };
+    }
+
+    // =========================================================================
+    // RPG MAKER MZ / MV ENCRYPTION COMPATIBILITY & DECRYPTION BYPASS
+    // =========================================================================
+
+    // 1. Decryption Bypass for Clean Media Buffers (Heuristic Signature Bypass)
+    if (typeof Utils !== "undefined" && typeof Utils.decryptArrayBuffer === "function") {
+        const _Utils_decryptArrayBuffer = Utils.decryptArrayBuffer;
+        Utils.decryptArrayBuffer = function (source) {
+            const loader = getLoader();
+            if (loader) {
+                if (typeof loader.isCleanMediaBuffer === "function" && loader.isCleanMediaBuffer(source)) {
+                    return source; // Clean PNG/OGG/JPEG/M4A/RIFF detected -> skip XOR
+                }
+                if (typeof loader.isEncryptedBuffer === "function" && !loader.isEncryptedBuffer(source)) {
+                    return source; // Not RPGMV encrypted header -> bypass error
+                }
+            }
+            return _Utils_decryptArrayBuffer.call(this, source);
+        };
+    }
+
+    if (typeof Decrypter !== "undefined") {
+        if (typeof Decrypter.decryptArrayBuffer === "function") {
+            const _Decrypter_decryptArrayBuffer = Decrypter.decryptArrayBuffer;
+            Decrypter.decryptArrayBuffer = function (source) {
+                const loader = getLoader();
+                if (loader) {
+                    if (typeof loader.isCleanMediaBuffer === "function" && loader.isCleanMediaBuffer(source)) {
+                        return source;
+                    }
+                    if (typeof loader.isEncryptedBuffer === "function" && !loader.isEncryptedBuffer(source)) {
+                        return source;
+                    }
+                }
+                return _Decrypter_decryptArrayBuffer.call(this, source);
+            };
+        }
+        if (typeof Decrypter.extToEncryptExt === "function") {
+            const _Decrypter_extToEncryptExt = Decrypter.extToEncryptExt;
+            Decrypter.extToEncryptExt = function (url) {
+                const loader = getLoader();
+                if (loader && typeof loader.isCleanVirtualAsset === "function" && loader.isCleanVirtualAsset(url)) {
+                    return url; // Preserve clean url for mod assets in MV
+                }
+                return _Decrypter_extToEncryptExt.call(this, url);
+            };
+        }
+    }
+
+    // 2. Bitmap Image Loading Hooks (MZ & MV)
+    if (typeof Bitmap !== "undefined" && Bitmap.prototype) {
+        if (typeof Bitmap.prototype._startLoading === "function") {
+            const _Bitmap_startLoading = Bitmap.prototype._startLoading;
+            Bitmap.prototype._startLoading = function () {
+                const loader = getLoader();
+                if (loader) {
+                    if (typeof loader.resolveAsset === "function" && this._url) {
+                        const override = loader.resolveAsset(this._url);
+                        if (override) this._url = override;
+                    }
+                    if (typeof loader.isCleanVirtualAsset === "function" && loader.isCleanVirtualAsset(this._url)) {
+                        this._destroyCanvas();
+                        this._loadingState = "loading";
+                        this._image.src = this._url;
+                        if (this._image.width > 0) {
+                            this._image.onload = null;
+                            this._onLoad();
+                        }
+                        return;
+                    }
+                }
+                _Bitmap_startLoading.call(this);
+            };
+        }
+
+        if (typeof Bitmap.prototype._startDecrypting === "function") {
+            const _Bitmap_startDecrypting = Bitmap.prototype._startDecrypting;
+            Bitmap.prototype._startDecrypting = function () {
+                const loader = getLoader();
+                if (loader && typeof loader.isCleanVirtualAsset === "function" && loader.isCleanVirtualAsset(this._url)) {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("GET", this._url);
+                    xhr.responseType = "arraybuffer";
+                    xhr.onload = () => this._onXhrLoad(xhr);
+                    xhr.onerror = this._onError.bind(this);
+                    xhr.send();
+                    return;
+                }
+                _Bitmap_startDecrypting.call(this);
+            };
+        }
+    }
+
+    // 3. WebAudio Hooks (MZ)
+    if (typeof WebAudio !== "undefined" && WebAudio.prototype && typeof WebAudio.prototype._realUrl === "function") {
+        const _WebAudio_realUrl = WebAudio.prototype._realUrl;
+        WebAudio.prototype._realUrl = function () {
+            const loader = getLoader();
+            if (loader) {
+                if (typeof loader.resolveAsset === "function" && this._url) {
+                    const override = loader.resolveAsset(this._url);
+                    if (override) this._url = override;
+                }
+                if (typeof loader.isCleanVirtualAsset === "function" && loader.isCleanVirtualAsset(this._url)) {
+                    return this._url; // Do not append "_" for clean mod audio
+                }
+            }
+            return _WebAudio_realUrl.call(this);
         };
     }
 

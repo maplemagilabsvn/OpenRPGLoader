@@ -921,6 +921,129 @@
     print("");
 
     // ========================================================================
+    // SUITE 13: ENCRYPTED ASSET MAPPING & DECRYPTION BYPASS (15 TESTS)
+    // ========================================================================
+    print("📋 [TEST SUITE 13] Encrypted Asset Mapping & Decryption Bypass (15 Scenarios)");
+
+    {
+        const engine = new OpenRPGEngine({ gameRoot: "D:/DummyGame" });
+
+        // 1. Magic bytes detection: PNG
+        const pngBuf = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]).buffer;
+        assert(engine.isCleanMediaBuffer(pngBuf) === true, "Magic Bytes: Nhận diện chính xác chữ ký PNG chuẩn");
+
+        // 2. Magic bytes detection: OGG
+        const oggBuf = new Uint8Array([0x4f, 0x67, 0x67, 0x53, 0x00, 0x02, 0x00, 0x00]).buffer;
+        assert(engine.isCleanMediaBuffer(oggBuf) === true, "Magic Bytes: Nhận diện chính xác chữ ký Ogg Vorbis/Opus ('OggS')");
+
+        // 3. Magic bytes detection: JPEG
+        const jpgBuf = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46]).buffer;
+        assert(engine.isCleanMediaBuffer(jpgBuf) === true, "Magic Bytes: Nhận diện chính xác chữ ký JPEG (0xFF 0xD8 0xFF)");
+
+        // 4. Magic bytes detection: M4A/MP4
+        const m4aBuf = new Uint8Array([0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x41, 0x20]).buffer;
+        assert(engine.isCleanMediaBuffer(m4aBuf) === true, "Magic Bytes: Nhận diện chính xác chữ ký M4A ('ftyp')");
+
+        // 5. Magic bytes detection: RIFF/WAV
+        const wavBuf = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x24, 0x00, 0x00, 0x00, 0x57, 0x41, 0x56, 0x45]).buffer;
+        assert(engine.isCleanMediaBuffer(wavBuf) === true, "Magic Bytes: Nhận diện chính xác chữ ký RIFF/WAV");
+
+        // 6. Encrypted RPGMV Header detection
+        const rpgmvHeader = new Uint8Array([
+            0x52, 0x50, 0x47, 0x4d, 0x56, 0x00, 0x00, 0x00,
+            0x00, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+            0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00
+        ]).buffer;
+        assert(engine.isEncryptedBuffer(rpgmvHeader) === true, "Encrypted Header: Nhận diện chính xác RPGMV encrypted header");
+
+        // 7. Non-encrypted buffer detection
+        const randomBuf = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]).buffer;
+        assert(engine.isEncryptedBuffer(randomBuf) === false, "Encrypted Header: Trả về false cho buffer không phải RPGMV");
+
+        // 8. Extension cleaning: .png_ and .rpgmvp
+        assert(engine.cleanAssetExtension("img/pictures/Hero.png_") === "img/pictures/Hero.png" &&
+               engine.cleanAssetExtension("img/pictures/Hero.rpgmvp") === "img/pictures/Hero.png",
+               "Extension Mapping: Tự động chuyển đổi .png_ (MZ) và .rpgmvp (MV) thành .png");
+
+        // 9. Extension cleaning: .ogg_ and .rpgmvo
+        assert(engine.cleanAssetExtension("audio/bgm/Theme.ogg_") === "audio/bgm/Theme.ogg" &&
+               engine.cleanAssetExtension("audio/bgm/Theme.rpgmvo") === "audio/bgm/Theme.ogg",
+               "Extension Mapping: Tự động chuyển đổi .ogg_ (MZ) và .rpgmvo (MV) thành .ogg");
+
+        // 10. Extension cleaning: .rpgmvm
+        assert(engine.cleanAssetExtension("audio/bgm/Theme.rpgmvm") === "audio/bgm/Theme.m4a",
+               "Extension Mapping: Tự động chuyển đổi .rpgmvm (MV) thành .m4a");
+
+        // 11-13. Virtual Asset Resolution with temp directory
+        let tempDir = null;
+        if (nodeFs && nodePath) {
+            tempDir = nodePath.join(__dirname, "temp_test_enc_assets");
+            try {
+                if (nodeFs.existsSync(tempDir)) nodeFs.rmSync(tempDir, { recursive: true, force: true });
+                nodeFs.mkdirSync(tempDir, { recursive: true });
+                nodeFs.mkdirSync(nodePath.join(tempDir, "img", "pictures"), { recursive: true });
+                nodeFs.mkdirSync(nodePath.join(tempDir, "audio", "bgm"), { recursive: true });
+
+                nodeFs.writeFileSync(nodePath.join(tempDir, "img", "pictures", "Hero.png"), "FAKE_PNG_CONTENT");
+                nodeFs.writeFileSync(nodePath.join(tempDir, "audio", "bgm", "Battle.ogg"), "FAKE_OGG_CONTENT");
+
+                const testEngine = new OpenRPGEngine({ gameRoot: tempDir });
+                testEngine.mods = [{
+                    id: "mod_enc_test",
+                    status: "active",
+                    isFolder: true,
+                    folderPath: tempDir
+                }];
+
+                // 11. Request .png_ resolves to clean Hero.png
+                const resolvedPng_ = testEngine.resolveAsset("img/pictures/Hero.png_");
+                assert(resolvedPng_ !== null && resolvedPng_.endsWith("img/pictures/Hero.png"),
+                    "Asset Resolver: Yêu cầu ảnh mã hóa MZ (.png_) tự động trỏ về ảnh sạch .png của mod");
+
+                // 12. Request .rpgmvp resolves to clean Hero.png
+                const resolvedMvp = testEngine.resolveAsset("img/pictures/Hero.rpgmvp");
+                assert(resolvedMvp !== null && resolvedMvp.endsWith("img/pictures/Hero.png"),
+                    "Asset Resolver: Yêu cầu ảnh mã hóa MV (.rpgmvp) tự động trỏ về ảnh sạch .png của mod");
+
+                // 13. Request .ogg_ resolves to clean Battle.ogg
+                const resolvedOgg_ = testEngine.resolveAsset("audio/bgm/Battle.ogg_");
+                assert(resolvedOgg_ !== null && resolvedOgg_.endsWith("audio/bgm/Battle.ogg"),
+                    "Asset Resolver: Yêu cầu âm thanh mã hóa MZ (.ogg_) tự động trỏ về âm thanh sạch .ogg của mod");
+            } finally {
+                if (tempDir && nodeFs.existsSync(tempDir)) {
+                    try { nodeFs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) {}
+                }
+            }
+        }
+
+        // 14. Decryption Bypass for clean PNG/OGG buffer
+        const cleanPngArray = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02, 0x03, 0x04]);
+        const bypassedBuf = engine.decryptArrayBuffer(cleanPngArray.buffer, "d41d8cd98f00b204e9800998ecf8427e");
+        const bypassedBytes = new Uint8Array(bypassedBuf);
+        assert(bypassedBytes[0] === 0x89 && bypassedBytes[1] === 0x50 && bypassedBytes[2] === 0x4e && bypassedBytes[3] === 0x47,
+            "Decryption Bypass: Bỏ qua giải mã XOR khi phát hiện buffer ảnh PNG sạch, giữ nguyên byte gốc");
+
+        // 15. Decryption of actual RPGMV payload with 32-hex key
+        const testKey = "0102030405060708090a0b0c0d0e0f10";
+        const encBytes = new Uint8Array(32);
+        const headerPattern = [0x52, 0x50, 0x47, 0x4d, 0x56, 0x00, 0x00, 0x00, 0x00, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00];
+        for (let i = 0; i < 16; i++) encBytes[i] = headerPattern[i];
+        const keyVals = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10];
+        for (let i = 0; i < 16; i++) {
+            encBytes[16 + i] = 0xAA ^ keyVals[i];
+        }
+        const decBuf = engine.decryptArrayBuffer(encBytes.buffer, testKey);
+        const decU8 = new Uint8Array(decBuf);
+        let decSuccess = (decU8.byteLength === 16);
+        for (let i = 0; i < 16; i++) {
+            if (decU8[i] !== 0xAA) decSuccess = false;
+        }
+        assert(decSuccess === true, "Decryption Engine: Tự động bóc tách header RPGMV và giải mã XOR chính xác với khóa 32-hex");
+    }
+    print("");
+
+    // ========================================================================
     // TỔNG KẾT BÁO CÁO TOÀN DIỆN 205 TESTS
     // ========================================================================
     print("==================================================================");

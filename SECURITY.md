@@ -8,7 +8,8 @@ Các phiên bản chính thức của OpenRPGLoader được hỗ trợ theo t�
 
 | Phiên Bản | Được Hỗ Trợ | Ghi Chú Tài Liệu |
 | :--- | :---: | :--- |
-| **`1.1.1`** | ✅ Có | Bản phát hành mới nhất (Sử dụng Dev Docs hiện hành) |
+| **`1.1.2`** | ✅ Có | Bản phát hành mới nhất (Sử dụng Dev Docs hiện hành) |
+| **`1.1.1`** | ✅ Có | Được hỗ trợ bảo mật (Sử dụng Dev Docs hiện hành) |
 | **`1.1.0`** | ✅ Có | Được hỗ trợ bảo mật (Sử dụng Dev Docs hiện hành) |
 | **`1.0.0`** | ✅ Có | Phiên bản gốc (Tra cứu qua [Dev Docs theo Tag v1.0.0](https://github.com/maplemagilabsvn/OpenRPGLoader/tree/v1.0.0/Dev%20Docs)) |
 | **`< 1.0`** | ❌ Không | Bản tiền phát hành / thử nghiệm |

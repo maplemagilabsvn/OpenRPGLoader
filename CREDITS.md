@@ -32,6 +32,14 @@ Dự án **OpenRPGLoader** được phát triển và duy trì bởi cộng đ�
 
 ---
 
+## 💡 Ý Tưởng & Đề Xuất Giải Pháp (Ideas & Proposals)
+
+* **Phương án Tương thích Tài nguyên Mã hóa & Bỏ qua Giải mã Mod (Encrypted Asset Mapping & Decryption Bypass)**:
+  - **Đề xuất & đóng góp ý tưởng bởi:** **`@PhongOfficial5`** (đóng góp qua Discord)
+  - **Chi tiết:** Đề xuất phương án xử lý xung đột tài nguyên khi game RPG Maker (MZ/MV) kích hoạt tính năng mã hóa file (`hasEncryptedImages`, `hasEncryptedAudio`). Thay vì buộc modder phải giải mã game hay can thiệp thủ công vào hệ thống, giải pháp đề xuất cơ chế tự động ánh xạ đuôi mã hóa (`.png_`, `.rpgmvp`, `.ogg_`, `.rpgmvo`, `.rpgmvm`) sang asset sạch (`.png`, `.ogg`, `.m4a`) của mod trong `VirtualAssetResolver`, kết hợp nhận diện magic bytes nhị phân (PNG, OGG, JPEG, M4A, RIFF) để tự động bỏ qua khâu XOR decryption của game đối với tài nguyên mod sạch, ngăn chặn triệt để lỗi hỏng hình ảnh/âm thanh và crash game.
+
+---
+
 ## 🐛 Sửa Lỗi (Bug Fixes)
 
 * **Sửa lỗi phạm vi biến Circuit Breaker (Scope Resolution Fix - PR #1)**:
@@ -50,9 +58,9 @@ Dự án **OpenRPGLoader** được phát triển và duy trì bởi cộng đ�
 
 ## 🧪 Kiểm Thử & Tự Động Hóa (Testing & Verification)
 
-* **Bộ siêu kiểm thử tự động 240 kịch bản (Test Suite 1 - 12)**:
+* **Bộ siêu kiểm thử tự động 255 kịch bản (Test Suite 1 - 13)**:
   - **Đóng góp bởi:** **M.A.P.L.E MAGI Labs** & **Google Antigravity**
-  - **Chi tiết:** Xây dựng test runner độc lập kiểm thử toàn diện RFC 6902, Topo Sort, Circuit Breaker, Save Shield, Safe-FS và Master Security Policy với tỷ lệ 100% PASS.
+  - **Chi tiết:** Xây dựng test runner độc lập kiểm thử toàn diện RFC 6902, Topo Sort, Circuit Breaker, Save Shield, Safe-FS, Master Security Policy, và Bộ tương thích tài nguyên mã hóa (Encrypted Asset Mapping & Decryption Bypass) với tỷ lệ 100% PASS (255/255).
 
 * **Kịch bản kiểm thử hồi quy Circuit Breaker (Test #240)**:
   - **Đóng góp bởi:** **M.A.P.L.E MAGI Labs** (xác thực giải pháp từ PR #1 của **`@PhongOfficial5`**)
