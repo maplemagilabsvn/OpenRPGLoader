@@ -11,8 +11,7 @@ Tất cả các thay đổi đáng chú ý của dự án **OpenRPGLoader** sẽ
 ### ⚙️ Tính năng mới & Tương thích (Added & Compatibility)
 - **Tự động ánh xạ tài nguyên ảo mã hóa (Transparent Encrypted Asset Mapping)**:
   - Tự động nhận diện và chuyển hướng yêu cầu tài nguyên mã hóa từ engine game (`.png_` trong RPG Maker MZ, `.rpgmvp` trong RPG Maker MV, `.ogg_` trong MZ, `.rpgmvo`/`.rpgmvm` trong MV) sang tệp tài nguyên sạch không mã hóa tương ứng (`.png`, `.ogg`, `.m4a`) trong thư mục mod.
-  - Modder chỉ cần cung cấp hình ảnh hoặc âm thanh chuẩn, trò chơi sẽ tự động ưu tiên nạp asset của mod mà không cần giải mã source game.  
-  *(Ý tưởng và phương án đề xuất bởi contributor **`@PhongOfficial5`** qua Discord)*.
+  - Modder chỉ cần cung cấp hình ảnh hoặc âm thanh chuẩn, trò chơi sẽ tự động ưu tiên nạp asset của mod mà không cần giải mã source game.
 - **Tự động bỏ qua giải mã cho tài nguyên Mod (Decryption Bypass for Virtual Assets)**:
   - Tự động nhận diện chữ ký nhị phân (Magic Bytes) chuẩn của file phương tiện sạch (`PNG`, `OggS`, `JPEG`, `ftyp`/M4A, `RIFF`/WAV).
   - Can thiệp an toàn vào pipeline `Utils.decryptArrayBuffer` (MZ), `Decrypter.decryptArrayBuffer` (MV), `Bitmap._startLoading`, `Bitmap._startDecrypting` và `WebAudio._realUrl` để bỏ qua thao tác XOR decryption đối với các tệp mod sạch, loại bỏ hoàn toàn lỗi `Error: Decryption error` hoặc hỏng cấu trúc ảnh/âm thanh khi cài mod vào game có mã hóa asset.
