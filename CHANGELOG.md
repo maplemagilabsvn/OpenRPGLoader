@@ -11,7 +11,8 @@ Tất cả các thay đổi đáng chú ý của dự án **OpenRPGLoader** sẽ
 ### ⚙️ Tính năng mới & Tương thích (Added & Compatibility)
 - **Tự động ánh xạ tài nguyên ảo mã hóa (Transparent Encrypted Asset Mapping)**:
   - Tự động nhận diện và chuyển hướng yêu cầu tài nguyên mã hóa từ engine game (`.png_` trong RPG Maker MZ, `.rpgmvp` trong RPG Maker MV, `.ogg_` trong MZ, `.rpgmvo`/`.rpgmvm` trong MV) sang tệp tài nguyên sạch không mã hóa tương ứng (`.png`, `.ogg`, `.m4a`) trong thư mục mod.
-  - Modder chỉ cần cung cấp hình ảnh hoặc âm thanh chuẩn, trò chơi sẽ tự động ưu tiên nạp asset của mod mà không cần giải mã source game.
+  - Modder chỉ cần cung cấp hình ảnh hoặc âm thanh chuẩn, trò chơi sẽ tự động ưu tiên nạp asset của mod mà không cần giải mã source game.  
+  *(Ý tưởng & đề xuất giải pháp bởi contributor **`@PhongOfficial5`** qua Discord)*.
 - **Tự động bỏ qua giải mã cho tài nguyên Mod (Decryption Bypass for Virtual Assets)**:
   - Tự động nhận diện chữ ký nhị phân (Magic Bytes) chuẩn của file phương tiện sạch (`PNG`, `OggS`, `JPEG`, `ftyp`/M4A, `RIFF`/WAV).
   - Can thiệp an toàn vào pipeline `Utils.decryptArrayBuffer` (MZ), `Decrypter.decryptArrayBuffer` (MV), `Bitmap._startLoading`, `Bitmap._startDecrypting` và `WebAudio._realUrl` để bỏ qua thao tác XOR decryption đối với các tệp mod sạch, loại bỏ hoàn toàn lỗi `Error: Decryption error` hoặc hỏng cấu trúc ảnh/âm thanh khi cài mod vào game có mã hóa asset.
@@ -26,7 +27,8 @@ Tất cả các thay đổi đáng chú ý của dự án **OpenRPGLoader** sẽ
 ## [1.1.1] - 2026-11-08
 
 ### 🐛 Sửa lỗi (Fixed)
-- **Sửa lỗi phạm vi biến Circuit Breaker (Scope Resolution Fix)**: Khắc phục lỗi tiềm ẩn `ReferenceError: culprit is not defined` khi nhà phát triển đăng ký Master Security Policy (`engine.setSecurityPolicy`) và một Safe Hook ném ngoại lệ trong quá trình chạy. Khai báo biến `culprit` đã được đưa lên ngay đầu khối kiểm tra Circuit Breaker trong cả `OpenRPGEngine.js` và `OpenRPGLoader.js`, đảm bảo đối tượng mod gây lỗi luôn được truyền hợp lệ vào chính sách bảo mật.
+- **Sửa lỗi phạm vi biến Circuit Breaker (Scope Resolution Fix)**: Khắc phục lỗi tiềm ẩn `ReferenceError: culprit is not defined` khi nhà phát triển đăng ký Master Security Policy (`engine.setSecurityPolicy`) và một Safe Hook ném ngoại lệ trong quá trình chạy. Khai báo biến `culprit` đã được đưa lên ngay đầu khối kiểm tra Circuit Breaker trong cả `OpenRPGEngine.js` và `OpenRPGLoader.js`, đảm bảo đối tượng mod gây lỗi luôn được truyền hợp lệ vào chính sách bảo mật.  
+  *(Đóng góp bản vá bởi contributor [@PhongOfficial5](https://github.com/PhongOfficial5) qua Pull Request [#1](https://github.com/maplemagilabsvn/OpenRPGLoader/pull/1))*.
 
 ### 🧪 Kiểm thử (Testing)
 - **Kịch bản kiểm thử hồi quy (Regression Test #240)**: Bổ sung bài kiểm tra tự động xác nhận Circuit Breaker phối hợp chuẩn xác với Master Security Policy khi xử lý lỗi Safe Hook, nâng tổng số kiểm thử tự động của dự án lên **240/240 kịch bản PASS (100.0%)**.

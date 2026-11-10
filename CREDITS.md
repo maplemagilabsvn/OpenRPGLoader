@@ -13,11 +13,23 @@ Dự án **OpenRPGLoader** được phát triển và duy trì bởi cộng đ�
 
 ---
 
-## 🛡️ Bảo Vệ & An Toàn Hệ Thống (Defensive Systems)
+## 💡 Ý Tưởng & Đề Xuất Giải Pháp (Ideas & Proposals)
 
-* **Sửa lỗi phạm vi biến Circuit Breaker (Scope Resolution Fix)**:
-  - **Đóng góp bởi:** **Takanashi Hoshino** & **M.A.P.L.E MAGI Labs**
-  - **Chi tiết:** Khắc phục triệt để lỗi phạm vi biến tiềm ẩn tại cơ chế Safe Hook Circuit Breaker, đưa khai báo biến `culprit` lên đầu khối kiểm tra.
+* **Phương án Tương thích Tài nguyên Mã hóa & Bỏ qua Giải mã Mod (Encrypted Asset Mapping & Decryption Bypass)**:
+  - **Đề xuất & đóng góp ý tưởng bởi:** **`@PhongOfficial5`** (đóng góp qua Discord)
+  - **Chi tiết:** Đề xuất phương án xử lý xung đột tài nguyên khi game RPG Maker (MZ/MV) kích hoạt tính năng mã hóa file (`hasEncryptedImages`, `hasEncryptedAudio`).
+
+---
+
+## 👥 Người Đóng Góp Cộng Đồng (Community Contributors)
+
+* **Sửa lỗi phạm vi biến Circuit Breaker (Scope Resolution Fix - PR #1)**:
+  - **Đóng góp bởi:** **`@PhongOfficial5`** ([Pull Request #1](https://github.com/maplemagilabsvn/OpenRPGLoader/pull/1))
+  - **Chi tiết:** Đóng góp bản vá nhỏ (Contributor Patch) đưa biến `culprit` lên đầu khối kiểm tra Circuit Breaker.
+
+---
+
+## 🛡️ Bảo Vệ & An Toàn Hệ Thống (Defensive Systems)
 
 * **Vá lỗi bỏ lọt tiền tố Node (`node:child_process`, `node:fs`) & Global Escape**:
   - **Đóng góp bởi:** **M.A.P.L.E MAGI Labs**
