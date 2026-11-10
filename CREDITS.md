@@ -7,9 +7,9 @@ Dự án **OpenRPGLoader** được phát triển và duy trì bởi cộng đ�
 ## 🏛️ Kiến Trúc & Logic Cốt Lõi (Architecture & Core Logic)
 
 * **Thiết kế nền tảng & Kiến trúc 2 tầng (OpenRPGEngine & OpenRPGLoaderCore)**:
-  - **Sáng lập & Phát triển bởi:** **Takanashi Hoshino** & **M.A.P.L.E MAGI Labs**
+  - **Đóng góp bởi:** **M.A.P.L.E MAGI Labs**
   - **Chi tiết:** Xây dựng mô hình Chromium-style phân tách độc lập giữa core engine và UI adapter; thiết lập hệ thống Lifecycle Hooks hai pha (Staged Sandbox).
-  - Toàn bộ tính năng cốt lõi (RFC 6902 JSON-Patch, Topo Sort SemVer, Circuit Breaker, Save Shield, Safe-FS, Virtual Asset Resolver, Encrypted Asset Mapping & Decryption Bypass) đều thuộc quyền sở hữu kiến trúc và phát triển độc quyền của **Takanashi Hoshino & M.A.P.L.E MAGI Labs**.
+  - Toàn bộ tính năng cốt lõi (RFC 6902 JSON-Patch, Topo Sort SemVer, Circuit Breaker, Save Shield, Safe-FS, Virtual Asset Resolver, Encrypted Asset Mapping & Decryption Bypass) đều thuộc quyền sở hữu kiến trúc và phát triển của **M.A.P.L.E MAGI Labs**.
 
 ---
 
@@ -48,7 +48,7 @@ Dự án **OpenRPGLoader** được phát triển và duy trì bởi cộng đ�
   - **Chi tiết:** Xây dựng test runner độc lập kiểm thử toàn diện RFC 6902, Topo Sort, Circuit Breaker, Save Shield, Safe-FS, Master Security Policy, và Bộ tương thích tài nguyên mã hóa (Encrypted Asset Mapping & Decryption Bypass) với tỷ lệ 100% PASS (255/255).
 
 * **Kịch bản kiểm thử hồi quy Circuit Breaker (Test #240)**:
-  - **Đóng góp bởi:** **Takanashi Hoshino** & **M.A.P.L.E MAGI Labs**
+  - **Đóng góp bởi:** **M.A.P.L.E MAGI Labs**
   - **Chi tiết:** Bổ sung bài kiểm tra tự động khóa cứng lỗi phạm vi biến của `culprit` trong Safe Hook Circuit Breaker.
 
 ---
