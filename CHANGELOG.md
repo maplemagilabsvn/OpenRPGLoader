@@ -26,8 +26,7 @@ Tất cả các thay đổi đáng chú ý của dự án **OpenRPGLoader** sẽ
 ## [1.1.1] - 2026-11-08
 
 ### 🐛 Sửa lỗi (Fixed)
-- **Sửa lỗi phạm vi biến Circuit Breaker (Scope Resolution Fix)**: Khắc phục lỗi tiềm ẩn `ReferenceError: culprit is not defined` khi nhà phát triển đăng ký Master Security Policy (`engine.setSecurityPolicy`) và một Safe Hook ném ngoại lệ trong quá trình chạy. Khai báo biến `culprit` đã được đưa lên ngay đầu khối kiểm tra Circuit Breaker trong cả `OpenRPGEngine.js` và `OpenRPGLoader.js`, đảm bảo đối tượng mod gây lỗi luôn được truyền hợp lệ vào chính sách bảo mật.  
-  *(Cảm ơn đóng góp xuất sắc từ contributor [@PhongOfficial5](https://github.com/PhongOfficial5) qua Pull Request [#1](https://github.com/maplemagilabsvn/OpenRPGLoader/pull/1))*.
+- **Sửa lỗi phạm vi biến Circuit Breaker (Scope Resolution Fix)**: Khắc phục lỗi tiềm ẩn `ReferenceError: culprit is not defined` khi nhà phát triển đăng ký Master Security Policy (`engine.setSecurityPolicy`) và một Safe Hook ném ngoại lệ trong quá trình chạy. Khai báo biến `culprit` đã được đưa lên ngay đầu khối kiểm tra Circuit Breaker trong cả `OpenRPGEngine.js` và `OpenRPGLoader.js`, đảm bảo đối tượng mod gây lỗi luôn được truyền hợp lệ vào chính sách bảo mật.
 
 ### 🧪 Kiểm thử (Testing)
 - **Kịch bản kiểm thử hồi quy (Regression Test #240)**: Bổ sung bài kiểm tra tự động xác nhận Circuit Breaker phối hợp chuẩn xác với Master Security Policy khi xử lý lỗi Safe Hook, nâng tổng số kiểm thử tự động của dự án lên **240/240 kịch bản PASS (100.0%)**.

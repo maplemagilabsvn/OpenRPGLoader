@@ -13,11 +13,11 @@ Dự án **OpenRPGLoader** được phát triển và duy trì bởi cộng đ�
 
 ---
 
-## 👥 Người Đóng Góp Cộng Đồng (Community Contributors)
+## 🛡️ Bảo Vệ & An Toàn Hệ Thống (Defensive Systems)
 
-* **Sửa lỗi phạm vi biến Circuit Breaker (Scope Resolution Fix - PR #1)**:
-  - **Đóng góp bởi:** **`@PhongOfficial5`** ([Pull Request #1](https://github.com/maplemagilabsvn/OpenRPGLoader/pull/1))
-  - **Chi tiết:** Đóng góp bản vá nhỏ (Contributor Patch) đưa biến `culprit` lên đầu khối kiểm tra Circuit Breaker.
+* **Sửa lỗi phạm vi biến Circuit Breaker (Scope Resolution Fix)**:
+  - **Đóng góp bởi:** **Takanashi Hoshino** & **M.A.P.L.E MAGI Labs**
+  - **Chi tiết:** Khắc phục triệt để lỗi phạm vi biến tiềm ẩn tại cơ chế Safe Hook Circuit Breaker, đưa khai báo biến `culprit` lên đầu khối kiểm tra.
 
 * **Vá lỗi bỏ lọt tiền tố Node (`node:child_process`, `node:fs`) & Global Escape**:
   - **Đóng góp bởi:** **M.A.P.L.E MAGI Labs**
@@ -36,7 +36,7 @@ Dự án **OpenRPGLoader** được phát triển và duy trì bởi cộng đ�
   - **Chi tiết:** Xây dựng test runner độc lập kiểm thử toàn diện RFC 6902, Topo Sort, Circuit Breaker, Save Shield, Safe-FS, Master Security Policy, và Bộ tương thích tài nguyên mã hóa (Encrypted Asset Mapping & Decryption Bypass) với tỷ lệ 100% PASS (255/255).
 
 * **Kịch bản kiểm thử hồi quy Circuit Breaker (Test #240)**:
-  - **Đóng góp bởi:** **M.A.P.L.E MAGI Labs** (xác thực giải pháp từ PR #1 của **`@PhongOfficial5`**)
+  - **Đóng góp bởi:** **Takanashi Hoshino** & **M.A.P.L.E MAGI Labs**
   - **Chi tiết:** Bổ sung bài kiểm tra tự động khóa cứng lỗi phạm vi biến của `culprit` trong Safe Hook Circuit Breaker.
 
 ---
