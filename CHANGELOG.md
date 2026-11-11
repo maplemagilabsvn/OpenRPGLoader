@@ -6,6 +6,21 @@ Tất cả các thay đổi đáng chú ý của dự án **OpenRPGLoader** sẽ
 
 ---
 
+## [1.1.3] - 2026-11-11
+
+### 🛡️ Bảo mật & Kiến trúc (Security & Architecture)
+- **Tổng quát hóa cô lập Alias trong Staged Sandbox (`sandboxAliases`)**:
+  - Bổ sung tùy chọn `options.sandboxAliases` cùng các hàm nội bộ `_resolveSandboxAliases()` và `_getSandboxAliasValue()` trong `OpenRPGEngine.js` và `OpenRPGLoader.js` (tự động hỗ trợ `engine`, `Forge`, `OpenRPGLoader`, `options.name` và danh sách alias khai báo bởi bản phái sinh).
+  - Truyền đầy đủ các alias vào cả pha Dry-Run kiểm định (`auditMod`), `safeScope` Proxy (`window.*`, `globalThis.*`, `global.*`) và runner thực thi mod.
+  - Bổ sung cơ chế tạm thời shadow các con trỏ alias toàn cục trên `globalObj` trong khối `try...finally` khi mod khởi chạy, chặn triệt để kịch bản vượt Staged Sandbox qua `Function("return this")()` hoặc `eval()`.
+  *(Đề xuất từ báo cáo sự cố sandbox phái sinh bởi **`Takanashi Hoshino [BAGL]`** qua Discord cho ShieldLoader; thiết kế tổng quát & hoàn thiện kiến trúc bởi **M.A.P.L.E MAGI Labs**)*.
+
+### 🧪 Kiểm thử (Testing)
+- **Bổ sung Test Suite 14 (7 kịch bản kiểm thử mới)**: Kiểm thử lọc định danh `sandboxAliases`, chặn bypass `window.*`/`globalThis.*`/`Function("return this")()`, khôi phục global scope, Dry-Run `auditMod` và tính đồng nhất trên `OpenRPGLoaderCore`.
+- Tổng số bài kiểm thử tự động nâng lên **262/262 PASS (100.0%)**.
+
+---
+
 ## [1.1.2] - 2026-11-09
 
 ### ⚙️ Tính năng mới & Tương thích (Added & Compatibility)

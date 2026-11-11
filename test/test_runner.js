@@ -1044,7 +1044,95 @@
     print("");
 
     // ========================================================================
-    // TỔNG KẾT BÁO CÁO TOÀN DIỆN 205 TESTS
+    // [TEST SUITE 14] STAGED SANDBOX ALIASES & GLOBAL SHADOWING
+    // ========================================================================
+    {
+        print("🧪 [TEST SUITE 14] Staged Sandbox Aliases & Global Shadowing (7 Scenarios)");
+        const globalObj = typeof globalThis !== "undefined" ? globalThis : global;
+        const sbEngine = new OpenRPGEngine({
+            gameRoot: "D:/DummyGame",
+            name: "CustomLoader",
+            sandboxAliases: ["AliasOne", "bad-ident!", "require", "CustomLoader"],
+            features: { auditCache: false, strictQuarantine: false }
+        });
+
+        const resolvedAliases = sbEngine._resolveSandboxAliases();
+        assert(
+            resolvedAliases.includes("OpenRPGLoader") &&
+            resolvedAliases.includes("CustomLoader") &&
+            resolvedAliases.includes("AliasOne") &&
+            !resolvedAliases.includes("bad-ident!") &&
+            resolvedAliases.indexOf("require") === -1,
+            "Sandbox Aliases: Lọc bỏ định danh không hợp lệ/trùng từ khóa và giữ đúng alias hợp lệ"
+        );
+
+        const prevCustomGlobal = globalObj.CustomLoader;
+        const prevHadCustom = Object.prototype.hasOwnProperty.call(globalObj, "CustomLoader");
+        globalObj.CustomLoader = sbEngine;
+        try {
+            sbEngine._execute({
+                id: "fail_alias_bare_win",
+                folderPath: ".",
+                filePath: "fail1.js",
+                status: "discovered",
+                rawContent: `
+                    CustomLoader.registerItem({ id: "bad_item_1", name: "Bad1" });
+                    window.AliasOne.registerItem({ id: "bad_item_2", name: "Bad2" });
+                    globalThis.OpenRPGLoader.registerItem({ id: "bad_item_3", name: "Bad3" });
+                    Function("return this")().CustomLoader.registerActor({ id: "bad_actor_1", name: "BadA" });
+                    throw new Error("Force rollback");
+                `
+            });
+            assert(!sbEngine.registries.items.has("bad_item_1") && !sbEngine.registries.items.has("bad_item_2") && !sbEngine.registries.items.has("bad_item_3"),
+                "Sandbox Isolation: Mọi đăng ký qua bare CustomLoader / window.AliasOne / globalThis.OpenRPGLoader đều bị Rollback khi mod lỗi");
+            assert(!sbEngine.registries.actors.has("bad_actor_1"),
+                "Sandbox Global Shadowing: Truy cập Function('return this')().CustomLoader cũng bị cô lập trong Staged Sandbox");
+            assert(globalObj.CustomLoader === sbEngine,
+                "Sandbox Cleanup: Khôi phục nguyên vẹn tham chiếu globalObj.CustomLoader sau khi thực thi mod");
+
+            const auditRes = sbEngine.auditMod({
+                id: "dryrun_alias_mod",
+                name: "DryRun Alias Mod",
+                version: "1.0.0",
+                author: "Tester",
+                source: "Local",
+                description: "Verify dry-run with custom aliases",
+                disclaimer: "MIT",
+                terms: "MIT",
+                folderPath: ".",
+                filePath: "dryrun.js",
+                rawContent: `if (typeof CustomLoader === "undefined" || typeof AliasOne === "undefined") throw new Error("Missing alias");`
+            });
+            const l5 = auditRes.layers.find(l => l.layer === 5);
+            assert(l5 && l5.earned === 15, "Audit Dry-Run: Alias tùy chỉnh được truyền hợp lệ trong quá trình Dry-Run (15/15)");
+
+            assert(Boolean(OpenRPGLoaderCore), "OpenRPGLoaderCore Parity: Phải nạp được OpenRPGLoaderCore để kiểm thử đồng nhất");
+            if (OpenRPGLoaderCore) {
+                const coreSub = new OpenRPGLoaderCore({
+                    gameRoot: "D:/DummyGame",
+                    name: "CoreDerivative",
+                    sandboxAliases: ["CoreAlias"],
+                    features: { auditCache: false, strictQuarantine: false }
+                });
+                coreSub._execute({
+                    id: "fail_core_sub",
+                    folderPath: ".",
+                    filePath: "fail_core.js",
+                    status: "discovered",
+                    rawContent: `CoreDerivative.registerItem({ id: "core_bad_item", name: "Bad" }); throw new Error("Crash");`
+                });
+                assert(!coreSub.registries.items.has("core_bad_item"),
+                    "OpenRPGLoaderCore Parity: Staged Sandbox Alias rollback hoạt động đồng nhất trên OpenRPGLoaderCore");
+            }
+        } finally {
+            if (prevHadCustom) globalObj.CustomLoader = prevCustomGlobal;
+            else delete globalObj.CustomLoader;
+        }
+    }
+    print("");
+
+    // ========================================================================
+    // TỔNG KẾT BÁO CÁO TOÀN DIỆN
     // ========================================================================
     print("==================================================================");
     print(`🏁 BÁO CÁO KẾT QUẢ KIỂM THỬ: ${passedTests}/${totalTests} PASS (${((passedTests / totalTests) * 100).toFixed(1)}%)`);

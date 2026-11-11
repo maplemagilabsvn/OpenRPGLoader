@@ -318,6 +318,7 @@
                 crashDirName: "crash-reports",
                 auditCacheFileName: ".audit_cache.json",
                 circuitBreakerLimit: 2,
+                sandboxAliases: [],
                 features: {},
                 priorities: {},
                 security: {
@@ -1477,11 +1478,14 @@
             if (code && code.trim() && !codeCrit) {
                 try {
                     const dummyModule = { exports: {} };
+                    const dummySandbox = Object.create(this);
+                    const aliases = this._resolveSandboxAliases();
+                    const aliasValues = aliases.map(a => this._getSandboxAliasValue(dummySandbox, a));
                     const runner = new Function(
-                        "engine", "Forge", "module", "exports", "require", "fs", "child_process", "process", "__dirname", "__filename",
+                        ...aliases, "module", "exports", "require", "fs", "child_process", "process", "__dirname", "__filename",
                         code
                     );
-                    runner(Object.create(this), Object.create(this), dummyModule, dummyModule.exports, () => ({}), {}, {}, {}, ".", "test.js");
+                    runner(...aliasValues, dummyModule, dummyModule.exports, () => ({}), {}, {}, {}, ".", "test.js");
                 } catch (de) {
                     l5 = 8;
                 }
@@ -1877,6 +1881,33 @@
             return safeProc;
         }
 
+        _resolveSandboxAliases() {
+            const reserved = new Set([
+                "module", "exports", "require", "fs", "child_process",
+                "process", "__dirname", "__filename", "window", "globalThis", "global"
+            ]);
+            const validIdent = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+            const raw = ["engine", "Forge", "OpenRPGLoader"];
+            if (this.options && typeof this.options.name === "string" && this.options.name.trim()) {
+                raw.push(this.options.name.trim());
+            }
+            if (this.options && Array.isArray(this.options.sandboxAliases)) {
+                raw.push(...this.options.sandboxAliases);
+            }
+            const unique = [];
+            for (const item of raw) {
+                if (typeof item !== "string") continue;
+                const name = item.trim();
+                if (!validIdent.test(name) || reserved.has(name) || unique.includes(name)) continue;
+                unique.push(name);
+            }
+            return unique;
+        }
+
+        _getSandboxAliasValue(sandbox, alias) {
+            return Object.prototype.hasOwnProperty.call(sandbox, alias) ? sandbox[alias] : sandbox;
+        }
+
         createSandbox(modObj) {
             const staged = {
                 modId: modObj.id,
@@ -2226,7 +2257,13 @@
             const mDir = modObj.folderPath ? path.resolve(modObj.folderPath) : ".";
             const mFile = modObj.filePath ? path.resolve(modObj.filePath) : path.join(mDir, "index.js");
 
-            // Thiết lập Scope Sandbox an toàn: Ngăn chặn vượt rào qua window.require, globalThis.require, global.require
+            const aliases = this._resolveSandboxAliases();
+            const aliasMap = new Map();
+            for (const alias of aliases) {
+                aliasMap.set(alias, this._getSandboxAliasValue(sandbox, alias));
+            }
+
+            // Thiết lập Scope Sandbox an toàn: Ngăn chặn vượt rào qua window.require, globalThis.require, global.require và các alias loader
             const globalObj = this.getGlobalScope();
             const safeScope = new Proxy(globalObj, {
                 get(target, prop, receiver) {
@@ -2235,6 +2272,7 @@
                     if (prop === "fs") return sFs;
                     if (prop === "child_process") return sCp;
                     if (prop === "window" || prop === "globalThis" || prop === "global") return safeScope;
+                    if (aliasMap.has(prop)) return aliasMap.get(prop);
                     return Reflect.get(target, prop, receiver);
                 },
                 set(target, prop, val, receiver) {
@@ -2245,19 +2283,28 @@
                 }
             });
 
-            // Tạm thời hook con trỏ require toàn cục trong lúc chạy mod nhằm ngăn chặn bypass qua Function("return this")()
-            const prevGlobalRequire = globalObj.require;
+            // Tạm thời hook con trỏ require và các alias loader toàn cục trong lúc chạy mod nhằm ngăn chặn bypass qua Function("return this")() / eval()
+            const shadowTargets = [["require", sReq], ...aliasMap.entries()];
+            const savedGlobals = shadowTargets.map(([key]) => ({
+                key,
+                existed: Object.prototype.hasOwnProperty.call(globalObj, key),
+                value: globalObj[key]
+            }));
             try {
-                globalObj.require = sReq;
+                for (const [key, val] of shadowTargets) {
+                    try {
+                        globalObj[key] = val;
+                    } catch (_) {}
+                }
                 const code = modObj.rawContent || (fs && fs.existsSync(mFile) ? fs.readFileSync(mFile, "utf8") : "");
                 const debugUrl = `\n//# sourceURL=mods/${modObj.id}/${path ? path.basename(mFile) : "index.js"}`;
                 const moduleObj = { exports: {} };
                 const exports = moduleObj.exports;
                 const runner = new Function(
-                    "engine", "Forge", "module", "exports", "require", "fs", "child_process", "process", "__dirname", "__filename", "window", "globalThis", "global",
+                    ...aliases, "module", "exports", "require", "fs", "child_process", "process", "__dirname", "__filename", "window", "globalThis", "global",
                     code + debugUrl
                 );
-                runner(sandbox, sandbox, moduleObj, exports, sReq, sFs, sCp, sProc, mDir, mFile, safeScope, safeScope, safeScope);
+                runner(...aliases.map(a => aliasMap.get(a)), moduleObj, exports, sReq, sFs, sCp, sProc, mDir, mFile, safeScope, safeScope, safeScope);
 
                 this.commitSandbox(modObj, staged);
                 modObj.status = "active";
@@ -2269,10 +2316,15 @@
                 this.rollbackSandbox(modObj.id, staged);
                 this.emit("mod:error", { mod: modObj, error: err, stage: "execution" });
             } finally {
-                if (prevGlobalRequire !== undefined) {
-                    globalObj.require = prevGlobalRequire;
-                } else {
-                    delete globalObj.require;
+                for (let i = savedGlobals.length - 1; i >= 0; i--) {
+                    const entry = savedGlobals[i];
+                    try {
+                        if (entry.existed) {
+                            globalObj[entry.key] = entry.value;
+                        } else {
+                            delete globalObj[entry.key];
+                        }
+                    } catch (_) {}
                 }
             }
         }
